@@ -59,4 +59,4 @@ wine1 = {
     "classification": "IGT",
 }
 
-ins_result = collection.insert_one(wine1)  # добавляет одну запись в коллекцию collection
+# ins_result = collection.insert_one(wine1)  # добавляет одну запись в коллекцию collection
