@@ -1,8 +1,8 @@
+import os
+import requests
 import scrapy
 from scrapy.http import Response
-import requests
-from PIL import Image
-import os
+from ..items import WineItem
 
 
 def download_image(url, filename):
@@ -18,7 +18,7 @@ class SpiderWinesSpider(scrapy.Spider):
     allowed_domains = ["vino.ua"]
 
     def start_requests(self):
-        for i in range(1, 2):
+        for i in range(1, 62):
             url = f"https://vino.ua/ua/vino/filter/page={i}/"
             yield scrapy.Request(url=url, callback=self.parse)
 
@@ -33,7 +33,8 @@ class SpiderWinesSpider(scrapy.Spider):
         with open(filename, "wb") as f:
             f.write(response.body)
 
-        data = {}
+        data = WineItem()
+        data["kind"] = "wine"
 
         rows = response.css('table.product-features__table tr')
 
@@ -54,57 +55,69 @@ class SpiderWinesSpider(scrapy.Spider):
                 header = header.strip()
                 value = value.strip()
 
-                if header == "Назва укр.":
-                    data["name"] = value
-                if header == "Колір":
-                    data["color"] = value
-                if header == "Тип":
-                    data["wine_type"] = value
-                if header == "Бренд":
-                    data["brand"] = value
-                if header == "Літраж":
-                    data["capacity"] = value
-                if header == "В ящику шт.":
-                    data["in_box"] = value
-                if header == "Упаковка":
-                    data["package"] = value
-                if header == "Міцність":
-                    data["alcohol_percentage"] = value
-                if header == "Країна":
-                    data["country"] = value
-                if header == "Регіон":
-                    data["region"] = value
-                if header == "Виробник":
-                    data["producer"] = value
-                if header == "Форма келиху":
-                    data["glass"] = value
-                if header == "Подавати за температури, С":
-                    data["temperature"] = value
-                if header == "Гастрономічне поєднання":
-                    data["gastronomic_combination"] = value
-                if header == "Виноград":
-                    data["grape"] = value
-                if header == "Вінтаж":
-                    data["vintage"] = value
-                if header == "Чи потрібна декантація":
-                    data["decantation"] = value
-                if header == "Діаметр пляшки":
-                    data["diameter"] = value
-                if header == "Постачальник":
-                    data["supplier"] = value
+                header_mapping = {
+                    "Назва укр.": "name",
+                    "Колір": "color",
+                    "Тип": "wine_type",
+                    "Бренд": "brand",
+                    "Літраж": "capacity",
+                    "В ящику шт.": "in_box",
+                    "Упаковка": "package",
+                    "Міцність": "alcohol_percentage",
+                    "Країна": "country",
+                    "Регіон": "region",
+                    "Виробник": "producer",
+                    "Форма келиху": "glass",
+                    "Подавати за температури, С": "temperature",
+                    "Гастрономічне поєднання": "gastronomic_combination",
+                    "Виноград": "grape",
+                    "Вінтаж": "vintage",
+                    "Чи потрібна декантація": "decantation",
+                    "Діаметр пляшки": "diameter",
+                    "Постачальник": "supplier"
+                }
+
+                if header in header_mapping:
+                    field_name = header_mapping[header]
+                    data[field_name] = value
+
+        price = response.css('.product-price__item::text').get()
+        data["price"] = price
 
         image_url = response.css('span.gallery__link::attr(data-href)').get()
-        data["image_url"] = "https://vino.ua/" + image_url
+        data["image_url"] = "https://vino.ua" + image_url
         filename = os.path.basename(data["image_url"])
         image_path = os.path.join('images', filename)
         download_image(data["image_url"],  image_path)
 
         small_image_url = response.css('img.gallery__photo-img::attr(src)').get()
-        data["small_image_url"] = "https://vino.ua/" + small_image_url
+        data["small_image_url"] = "https://vino.ua" + small_image_url
         filename = os.path.basename(data["small_image_url"])
         image_path = os.path.join('images', filename)
         download_image(data["small_image_url"],  image_path)
 
+        description_mapping = {
+            "Смак:": "name",
+            "Колір:": "color",
+            "Аромат:": "aroma",
+            "Гастрономія:": "gastronomic",
+            "Чому варто це купити.": "why_buy",
+        }
+        description = {}
+
+        description_titles = response.css('.product-description.j-product-description .text strong::text').getall()
+        description_paragraphs = response.css('.product-description.j-product-description .text p::text').getall()
+        for i in range(5):
+            title = description_titles[i]
+            paragraph = description_paragraphs[i]
+            if title and paragraph:
+                title = title.strip()
+                paragraph = paragraph.strip()
+                if title in description_mapping:
+                    field_name = description_mapping[title]
+                    description[field_name] = paragraph
+        data["description"] = description
         yield data
 
-
+#  run with command line:
+#  scrapy crawl spider-wines -o wines.csv
