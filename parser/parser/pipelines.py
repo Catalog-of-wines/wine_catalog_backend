@@ -27,8 +27,6 @@ class MongoDBPipeline:
     def open_spider(self, spider):
         self.client = pymongo.MongoClient(self.mongodb_uri)
         self.db = self.client[self.mongodb_db]
-        # Start with a clean database
-        self.db[self.collection].delete_many({})
 
     def close_spider(self, spider):
         self.client.close()

@@ -120,4 +120,4 @@ class SpiderWinesSpider(scrapy.Spider):
         yield data
 
 #  run with command line:
-#  scrapy crawl spider-wines -o wines.csv
+#  scrapy crawl spider-wines

@@ -7,10 +7,11 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import motor.motor_asyncio
+# import motor.motor_asyncio
 import json
 import pymongo
 from pymongo import MongoClient, InsertOne
+load_dotenv()
 
 
 app = FastAPI()
@@ -40,44 +41,16 @@ async def root():
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
-load_dotenv()
+
 
 # Подключение к MongoDB
-# client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
 client = MongoClient(os.environ["MONGODB_URL"])
-# подключаемся к БД catalog, если её нет, то будет создана
-db = client.catalog
+db = client["catalog"]
 collection = db["wines"]
-requesting = []
 
-JSON_FILE_PATH = "wines.json"
+    # manipulation with DB
 
-
-
-with open(JSON_FILE_PATH, "r") as f:
-    for jsonObj in f:
-        myDict = json.loads(jsonObj)
-        requesting.append(InsertOne(myDict))
-
-result = collection.bulk_write(requesting)
 client.close()
 
 
 
-
-# wine1 = {
-#     "name": "Кампаньола Піно Гріджіо Венеціє",
-#     "description": "some description",
-#     "color": "White",
-#     "type": "Dry",
-#     "brand": "Campagnola",
-#     "country": "Italy",
-#     "region": "Veneto",
-#     "grape_variety": ["аперитив", "морепродукти", "салати"],
-#     "capacity": 0.75,
-#     "price": 3257.00,
-#     "alcohol_percentage": 10.6,
-#     "classification": "IGT",
-# }
-
-# ins_result = collection.insert_one(wine1)  # добавляет одну запись в коллекцию collection
