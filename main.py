@@ -7,7 +7,11 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import motor.motor_asyncio
+# import motor.motor_asyncio
+import json
+import pymongo
+from pymongo import MongoClient, InsertOne
+load_dotenv()
 
 
 app = FastAPI()
@@ -37,26 +41,16 @@ async def root():
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
-load_dotenv()
-client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
-# подключаемся к БД catalog, если её нет, то будет создана
-db = client.catalog
 
+
+# Подключение к MongoDB
+client = MongoClient(os.environ["MONGODB_URL"])
+db = client["catalog"]
 collection = db["wines"]
 
-wine1 = {
-    "name": "Кампаньола Піно Гріджіо Венеціє",
-    "description": "some description",
-    "color": "White",
-    "type": "Dry",
-    "brand": "Campagnola",
-    "country": "Italy",
-    "region": "Veneto",
-    "grape_variety": ["аперитив", "морепродукти", "салати"],
-    "capacity": 0.75,
-    "price": 3257.00,
-    "alcohol_percentage": 10.6,
-    "classification": "IGT",
-}
+    # manipulation with DB
 
-# ins_result = collection.insert_one(wine1)  # добавляет одну запись в коллекцию collection
+client.close()
+
+
+
