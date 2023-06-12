@@ -41,27 +41,9 @@ async def say_hello(name: str):
 
 load_dotenv()
 client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
-# подключаемся к БД catalog, если её нет, то будет создана
 db = client.catalog
 
 collection = db["wines"]
-
-
-
-wine1 = {
-    "name": "Кампаньола Піно Гріджіо Венеціє",
-    "description": "some description",
-    "color": "White",
-    "type": "Dry",
-    "brand": "Campagnola",
-    "country": "Italy",
-    "region": "Veneto",
-    "grape_variety": ["аперитив", "морепродукти", "салати"],
-    "capacity": 0.75,
-    "price": 3257.00,
-    "alcohol_percentage": 10.6,
-    "classification": "IGT",
-}
 
 
 @app.get("/catalog")
@@ -87,4 +69,4 @@ async def get_wine(wine_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ins_result = collection.insert_one(wine1)  # добавляет одну запись в коллекцию collection
+# ins_result = collection.insert_one(wine1)
