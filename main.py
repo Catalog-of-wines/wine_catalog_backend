@@ -7,10 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-# import motor.motor_asyncio
-import json
-import pymongo
-from pymongo import MongoClient, InsertOne
+from pymongo import MongoClient
 load_dotenv()
 
 
@@ -42,14 +39,11 @@ async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
 
-
 # Подключение к MongoDB
 client = MongoClient(os.environ["MONGODB_URL"])
 db = client["catalog"]
 collection = db["wines"]
-
-    # manipulation with DB
-
+     # manipulation with DB
 client.close()
 
 
