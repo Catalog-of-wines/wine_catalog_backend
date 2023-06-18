@@ -107,7 +107,7 @@ word_mapping = {
     "жасмін": ["жасмін"],
     "липа": ["лип"],
     "імбир": ["імбир"],
-    "ягоди": ["ягод"],
+    "ягоди": ["ягод", "ягід"],
     "кедр": ["кедр"],
     "трюфель": ["трюфел"],
     "горіхи": ["горіх"],
@@ -129,19 +129,12 @@ word_mapping = {
 @app.get("/aroma")
 async def get_by_aroma(query: str, limit: int = 9, skip: int = 0):
     wines = []
-
-    # Разбиваем запрос на отдельные слова
     query_words = query.split(",")
-
-    # Преобразуем каждое слово по словарю соответствия
     transformed_words = [word_mapping.get(word, word) for word in query_words]
 
-    # Создаем шаблон регулярного выражения для поиска слов в любом порядке
     regex_pattern = "(?=.*{})" * len(transformed_words)
     regex_pattern = regex_pattern.format(*transformed_words)
-
-    # Создаем регулярное выражение с шаблоном
-    regex_query = {"$regex": regex_pattern, "$options": "i"}  # i - регистронезависимый поиск
+    regex_query = {"$regex": regex_pattern, "$options": "i"}
 
     filter_query = {"description.aroma": regex_query}
     cursor = collection.find(filter_query).limit(limit).skip(skip)
@@ -150,3 +143,16 @@ async def get_by_aroma(query: str, limit: int = 9, skip: int = 0):
         wine["_id"] = str(wine["_id"])
         wines.append(wine)
     return wines
+
+
+@app.get("/food")
+async def get_by_food(query: str, limit: int = 9, skip: int = 0):
+    foods = []
+    query_words = [word.strip() for word in query.split(",")]
+    filter_query = {"gastronomic_combination": {"$in": query_words}}
+    cursor = collection.find(filter_query).limit(limit).skip(skip)
+    async for document in cursor:
+        food = document.copy()
+        food["_id"] = str(food["_id"])
+        foods.append(food)
+    return foods
