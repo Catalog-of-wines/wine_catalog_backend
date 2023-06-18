@@ -7,6 +7,7 @@ import os
 
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException
+from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import motor.motor_asyncio
@@ -127,7 +128,11 @@ word_mapping = {
 
 
 @app.get("/aroma")
-async def get_by_aroma(query: str, limit: int = 9, skip: int = 0):
+async def get_by_aroma(
+        query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
+        limit: int = Query(9, gt=0, description="Number of records to return"),
+        skip: int = Query(0, ge=0, description="Number of records to skip")
+):
     wines = []
     query_words = query.split(",")
     transformed_words = [word_mapping.get(word, word) for word in query_words]
@@ -146,7 +151,11 @@ async def get_by_aroma(query: str, limit: int = 9, skip: int = 0):
 
 
 @app.get("/food")
-async def get_by_food(query: str, limit: int = 9, skip: int = 0):
+async def get_by_food(
+        query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
+        limit: int = Query(9, gt=0, description="Number of records to return"),
+        skip: int = Query(0, ge=0, description="Number of records to skip")
+):
     foods = []
     query_words = [word.strip() for word in query.split(",")]
     filter_query = {"gastronomic_combination": {"$in": query_words}}
@@ -156,3 +165,6 @@ async def get_by_food(query: str, limit: int = 9, skip: int = 0):
         food["_id"] = str(food["_id"])
         foods.append(food)
     return foods
+
+#TODO Узнать какие будут отправлены query from React и сделать валидацию.
+
