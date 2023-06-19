@@ -7,6 +7,7 @@ import os
 
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException
+from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import motor.motor_asyncio
@@ -30,26 +31,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+load_dotenv()
+client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
+db = client.catalog
+collection = db["wines"]
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-load_dotenv()
-client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
-db = client.catalog
-
-collection = db["wines"]
-
-
 @app.get("/catalog")
-async def get_wines():
+async def get_catalog(limit: int = 9, skip: int = 0):
     wines = []
-    async for document in collection.find():
+    cursor = collection.find().limit(limit).skip(skip)
+    async for document in cursor:
         wine = document.copy()
         wine["_id"] = str(wine["_id"])  # Convert ObjectId to string
         wines.append(wine)
@@ -57,7 +54,7 @@ async def get_wines():
 
 
 @app.get("/catalog/{wine_id}")
-async def get_wine(wine_id: str):
+async def get_bottle(wine_id: str):
     try:
         wine_id_obj = ObjectId(wine_id)
         wine = await collection.find_one({"_id": wine_id_obj})
@@ -69,4 +66,105 @@ async def get_wine(wine_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ins_result = collection.insert_one(wine1)
+
+@app.get("/wine")
+async def get_wine(limit: int = 9, skip: int = 0):
+    wines = []
+    cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        wine["_id"] = str(wine["_id"])
+        wines.append(wine)
+    return wines
+
+
+@app.get("/champagne")
+async def get_champagne(limit: int = 9, skip: int = 0):
+    champagne = []
+    cursor = collection.find({"kind": {"$in": ["prosecco", "Ігристе"]}}).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        wine["_id"] = str(wine["_id"])
+        champagne.append(wine)
+    return champagne
+
+
+word_mapping = {
+    "айва": ["айв"],
+    "ірис": ["ірис"],
+    "абрикос": ["абрикос"],
+    "ананас": ["ананас"],
+    "аніс": ["аніс"],
+    "апельсин": ["апельсин"],
+    "агрус": ["агрус"],
+    "вишня": ["вишн"],
+    "смородина": ["смородин"],
+    "тропічні фрукти": ["тропічні фрукти", "тропічних фруктів"],
+    "дуб": ["дуб"],
+    "ваніль": ["ваніль"],
+    "розмарин": ["розмарин"],
+    "перець": ["перец", "перець"],
+    "лічі": ["ліч"],
+    "жасмін": ["жасмін"],
+    "липа": ["лип"],
+    "імбир": ["імбир"],
+    "ягоди": ["ягод", "ягід"],
+    "кедр": ["кедр"],
+    "трюфель": ["трюфел"],
+    "горіхи": ["горіх"],
+    "полуниця": ["полуниц", "полуничн"],
+    "мигдаль": ["мигдал"],
+    "фініки": ["фіник"],
+    "банан": ["банан"],
+    "вершкове масло": ["масл"],
+    "джем": ["джем"],
+    "шоколад": ["шоколад"],
+    "мед": ["мед"],
+    "тютюн": ["тютюн"],
+    "кава": ["кав"],
+    "какао": ["какао"],
+    "земля": ["земл"],
+}
+
+
+@app.get("/aroma")
+async def get_by_aroma(
+        query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
+        limit: int = Query(9, gt=0, description="Number of records to return"),
+        skip: int = Query(0, ge=0, description="Number of records to skip")
+):
+    wines = []
+    query_words = query.split(",")
+    transformed_words = [word_mapping.get(word, word) for word in query_words]
+
+    regex_pattern = "(?=.*{})" * len(transformed_words)
+    regex_pattern = regex_pattern.format(*transformed_words)
+    regex_query = {"$regex": regex_pattern, "$options": "i"}
+
+    filter_query = {"description.aroma": regex_query}
+    cursor = collection.find(filter_query).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        wine["_id"] = str(wine["_id"])
+        wines.append(wine)
+    return wines
+
+
+@app.get("/food")
+async def get_by_food(
+        query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
+        limit: int = Query(9, gt=0, description="Number of records to return"),
+        skip: int = Query(0, ge=0, description="Number of records to skip")
+):
+    foods = []
+    query_words = [word.strip() for word in query.split(",")]
+    filter_query = {"gastronomic_combination": {"$in": query_words}}
+    cursor = collection.find(filter_query).limit(limit).skip(skip)
+    async for document in cursor:
+        food = document.copy()
+        food["_id"] = str(food["_id"])
+        foods.append(food)
+    return foods
+
+#TODO Узнать какие будут отправлены query from React и сделать валидацию.
+
