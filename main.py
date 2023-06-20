@@ -35,14 +35,15 @@ load_dotenv()
 client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
 db = client.catalog
 collection = db["wines"]
+aroma_list_collection = db["aroma_list"]
 
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "This is root page Catalog of wine"}
 
 
-@app.get("/catalog")
+@app.get("/catalog/")
 async def get_catalog(limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find().limit(limit).skip(skip)
@@ -53,7 +54,7 @@ async def get_catalog(limit: int = 9, skip: int = 0):
     return wines
 
 
-@app.get("/catalog/{wine_id}")
+@app.get("/catalog/{wine_id}/")
 async def get_bottle(wine_id: str):
     try:
         wine_id_obj = ObjectId(wine_id)
@@ -67,7 +68,7 @@ async def get_bottle(wine_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/wine")
+@app.get("/wine/")
 async def get_wine(limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
@@ -78,7 +79,7 @@ async def get_wine(limit: int = 9, skip: int = 0):
     return wines
 
 
-@app.get("/champagne")
+@app.get("/champagne/")
 async def get_champagne(limit: int = 9, skip: int = 0):
     champagne = []
     cursor = collection.find({"kind": {"$in": ["prosecco", "Ігристе"]}}).limit(limit).skip(skip)
@@ -89,53 +90,20 @@ async def get_champagne(limit: int = 9, skip: int = 0):
     return champagne
 
 
-word_mapping = {
-    "айва": ["айв"],
-    "ірис": ["ірис"],
-    "абрикос": ["абрикос"],
-    "ананас": ["ананас"],
-    "аніс": ["аніс"],
-    "апельсин": ["апельсин"],
-    "агрус": ["агрус"],
-    "вишня": ["вишн"],
-    "смородина": ["смородин"],
-    "тропічні фрукти": ["тропічні фрукти", "тропічних фруктів"],
-    "дуб": ["дуб"],
-    "ваніль": ["ваніль"],
-    "розмарин": ["розмарин"],
-    "перець": ["перец", "перець"],
-    "лічі": ["ліч"],
-    "жасмін": ["жасмін"],
-    "липа": ["лип"],
-    "імбир": ["імбир"],
-    "ягоди": ["ягод", "ягід"],
-    "кедр": ["кедр"],
-    "трюфель": ["трюфел"],
-    "горіхи": ["горіх"],
-    "полуниця": ["полуниц", "полуничн"],
-    "мигдаль": ["мигдал"],
-    "фініки": ["фіник"],
-    "банан": ["банан"],
-    "вершкове масло": ["масл"],
-    "джем": ["джем"],
-    "шоколад": ["шоколад"],
-    "мед": ["мед"],
-    "тютюн": ["тютюн"],
-    "кава": ["кав"],
-    "какао": ["какао"],
-    "земля": ["земл"],
-}
-
-
-@app.get("/aroma")
+@app.get("/aroma/")
 async def get_by_aroma(
         query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
         limit: int = Query(9, gt=0, description="Number of records to return"),
         skip: int = Query(0, ge=0, description="Number of records to skip")
 ):
+
+    aroma_mappings = await aroma_list_collection.find_one()
+    if not aroma_mappings:
+        raise HTTPException(status_code=500, detail="Word mappings not found in the database")
+
     wines = []
     query_words = query.split(",")
-    transformed_words = [word_mapping.get(word, word) for word in query_words]
+    transformed_words = [aroma_mappings.get(word, word) for word in query_words]
 
     regex_pattern = "(?=.*{})" * len(transformed_words)
     regex_pattern = regex_pattern.format(*transformed_words)
@@ -150,7 +118,16 @@ async def get_by_aroma(
     return wines
 
 
-@app.get("/food")
+@app.get("/aroma_mappings/")
+async def get_aroma_mappings():
+    word_mappings = await aroma_list_collection.find_one()
+    if not word_mappings:
+        raise HTTPException(status_code=500, detail="Aroma word mappings not found in the database")
+
+    return list(word_mappings.keys())
+
+
+@app.get("/food/")
 async def get_by_food(
         query: str = Query(..., description="Query parameter - gastronomic_combination separated by coma"),
         limit: int = Query(9, gt=0, description="Number of records to return"),

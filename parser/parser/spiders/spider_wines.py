@@ -41,15 +41,12 @@ class SpiderWinesSpider(scrapy.Spider):
         for row in rows:
             header = row.css('th::text').get()
             cell = row.css('td')
-            print("cell=",  cell)
 
             if len(cell) > 0:
                 if cell.css('a'):
                     value = cell.css('a::text').get()
-                    print("value with a=",  value)
                 else:
                     value = cell.css('td::text').get()
-                    print("value=",  value)
 
             if header and value:
                 header = header.strip()
