@@ -1,6 +1,7 @@
 # Wine catalog backend
 Fastapi project for Wine catalog web application (Fastapi + Node.js)  
 (The project in development)
+Frontend part [here](https://github.com/Catalog-of-wines) 
 ### 1. How to run with docker:
 - in command line in your IDE
 ```
