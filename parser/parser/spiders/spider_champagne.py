@@ -18,11 +18,9 @@ class SpiderWinesSpider(scrapy.Spider):
     allowed_domains = ["vino.ua"]
 
     def start_requests(self):
-    #     for i in range(4, 7):
-    #         url = f"https://vino.ua/ua/beloe-igristoe/filter/page={i}/"
-    #         yield scrapy.Request(url=url, callback=self.parse)
-        url = f"https://vino.ua/ua/krasnoe-igristoe/"
-        yield scrapy.Request(url=url, callback=self.parse)
+        for i in range(1, 7):
+            url = f"https://vino.ua/ua/beloe-igristoe/filter/page={i}/"
+            yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response: Response, **kwargs):
         hrefs = response.css('.catalogCard-main .catalogCard-view a::attr(href)').getall()
@@ -120,6 +118,6 @@ class SpiderWinesSpider(scrapy.Spider):
                     description[field_name] = paragraph
         data["description"] = description
         yield data
-#
-# #  run with command line:
-# #  scrapy crawl spider-ch
+
+
+#  run with command line: scrapy crawl spider-ch

@@ -116,5 +116,5 @@ class SpiderWinesSpider(scrapy.Spider):
         data["description"] = description
         yield data
 
-#  run with command line:
-#  scrapy crawl spider-wines
+
+#  run with command line: scrapy crawl spider-wines

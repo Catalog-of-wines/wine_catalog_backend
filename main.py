@@ -143,5 +143,3 @@ async def get_by_food(
         foods.append(food)
     return foods
 
-#TODO Узнать какие будут отправлены query from React и сделать валидацию.
-
