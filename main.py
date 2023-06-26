@@ -4,6 +4,7 @@
 #     uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
 import asyncio
 import os
+import random
 
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException
@@ -143,3 +144,36 @@ async def get_by_food(
         foods.append(food)
     return foods
 
+
+@app.get("/romantic/")
+async def get_romantic(limit: int = 9):
+    romantic_wines = []
+    pipeline = [{"$match": {"wine_type": {"$in": ["Сододке", "Напівсолодке"]}}}, {"$sample": {"size": limit}}]
+    cursor = collection.aggregate(pipeline)
+    async for document in cursor:
+        wine = document.copy()
+        wine["_id"] = str(wine["_id"])
+        romantic_wines.append(wine)
+    return romantic_wines
+
+
+@app.get("/festive/")
+async def get_festive(limit: int = 9):
+    festive_wines = []
+    pipeline = [
+        {
+            "$match": {
+                "$or": [
+                    {"$and": [{"kind": "prosecco"}, {"wine_type": "Солодке"}]},
+                    {"$and": [{"kind": "Ігристе"}, {"wine_type": "Солодке"}]}
+                ]
+            }
+        },
+        {"$sample": {"size": limit}}
+    ]
+    cursor = collection.aggregate(pipeline)
+    async for document in cursor:
+        wine = document.copy()
+        wine["_id"] = str(wine["_id"])
+        festive_wines.append(wine)
+    return festive_wines
