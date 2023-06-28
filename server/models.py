@@ -1,14 +1,16 @@
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel,  EmailStr
 
 
 class User(BaseModel):
-    id: str
     name: str
-    email: str
+    email: EmailStr
     password: str
     telephone: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 
 class Comment(BaseModel):
