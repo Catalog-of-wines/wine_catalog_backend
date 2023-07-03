@@ -3,3 +3,4 @@ venv/
 __pycache__/
 .python-version
 parser/images/
+/scripts for DB/

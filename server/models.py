@@ -14,10 +14,9 @@ class User(BaseModel):
 
 
 class Comment(BaseModel):
-    id: int
     text: str
     wine_id: str
-    users: List[User]
+    # user: User_id # надо подправить
 
 
 class Wine(BaseModel):
@@ -40,4 +39,4 @@ class Wine(BaseModel):
     price: str
     image_url: str
     small_image_url: str
-    comment_id: int
+    # comments: List[comment_id] = []_id: int # надо подправить
