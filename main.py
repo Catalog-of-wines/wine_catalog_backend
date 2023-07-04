@@ -16,7 +16,9 @@ from server.validation_functions import is_valid_password, is_valid_name, is_val
 
 app = FastAPI()
 
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR = os.path.join(BASE_DIR, "images")
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -59,13 +61,13 @@ def process_wine(wine, request: Request):
     return wine_model
 
 @app.get("/catalog/")
-async def get_catalog(limit: int = 9, skip: int = 0):
+async def get_catalog(request: Request, limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find().limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])  # Convert ObjectId to string
-        wines.append(wine)
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
     return wines
 
 
@@ -75,16 +77,8 @@ async def get_bottle(wine_id: str, request: Request):
         wine_id_obj = ObjectId(wine_id)
         wine = await collection.find_one({"_id": wine_id_obj})
         if wine:
-            wine["_id"] = str(wine["_id"])
-            wine_model = Wine(**wine)
-
-            image_url = str(request.url_for("images", path=wine_model.image_url))
-            wine_model.image_url = image_url
-
-            small_image_url = str(request.url_for("images", path=wine_model.small_image_url))
-            wine_model.small_image_url = small_image_url
-
-            return wine_model
+            processed_wine = process_wine(wine, request)
+            return processed_wine
         else:
             raise HTTPException(status_code=404, detail="Wine not found")
     except Exception as e:
@@ -92,18 +86,18 @@ async def get_bottle(wine_id: str, request: Request):
 
 
 @app.get("/wine/")
-async def get_wine(limit: int = 9, skip: int = 0):
+async def get_wine(request: Request, limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])
-        wines.append(wine)
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
     return wines
 
 
 @app.get("/champagne/")
-async def get_champagne(limit: int = 9, skip: int = 0):
+async def get_champagne(request: Request, limit: int = 9, skip: int = 0):
     champagne = []
     cursor = (
         collection.find({"kind": {"$in": ["prosecco", "Ігристе"]}})
@@ -112,13 +106,14 @@ async def get_champagne(limit: int = 9, skip: int = 0):
     )
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])
-        champagne.append(wine)
+        processed_wine = process_wine(wine, request)
+        champagne.append(processed_wine)
     return champagne
 
 
 @app.get("/aroma/")
 async def get_by_aroma(
+    request: Request,
     query: str = Query(
         ..., description="Query parameter - gastronomic_combination separated by coma"
     ),
@@ -143,8 +138,8 @@ async def get_by_aroma(
     cursor = collection.find(filter_query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])
-        wines.append(wine)
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
     return wines
 
 
@@ -161,6 +156,7 @@ async def get_aroma_mappings():
 
 @app.get("/food/")
 async def get_by_food(
+    request: Request,
     query: str = Query(
         ..., description="Query parameter - gastronomic_combination separated by coma"
     ),
@@ -173,13 +169,13 @@ async def get_by_food(
     cursor = collection.find(filter_query).limit(limit).skip(skip)
     async for document in cursor:
         food = document.copy()
-        food["_id"] = str(food["_id"])
-        foods.append(food)
+        processed_wine = process_wine(food, request)
+        foods.append(processed_wine)
     return foods
 
 
 @app.get("/romantic/")
-async def get_romantic(limit: int = 9):
+async def get_romantic(request: Request, limit: int = 9):
     romantic_wines = []
     pipeline = [
         {"$match": {"wine_type": {"$in": ["Сододке", "Напівсолодке"]}}},
@@ -188,13 +184,13 @@ async def get_romantic(limit: int = 9):
     cursor = collection.aggregate(pipeline)
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])
-        romantic_wines.append(wine)
+        processed_wine = process_wine(wine, request)
+        romantic_wines.append(processed_wine)
     return romantic_wines
 
 
 @app.get("/festive/")
-async def get_festive(limit: int = 9):
+async def get_festive(request: Request, limit: int = 9):
     festive_wines = []
     pipeline = [
         {
@@ -210,8 +206,8 @@ async def get_festive(limit: int = 9):
     cursor = collection.aggregate(pipeline)
     async for document in cursor:
         wine = document.copy()
-        wine["_id"] = str(wine["_id"])
-        festive_wines.append(wine)
+        processed_wine = process_wine(wine, request)
+        festive_wines.append(processed_wine)
     return festive_wines
 
 
@@ -256,10 +252,6 @@ async def register_user(name: str, email: str, password: str, phone: Optional[st
 
     return {"message": "User registered successfully", "user_id": user_id}
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGES_DIR = os.path.join(BASE_DIR, "images")
-
-app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 @app.get("/images/{image_path:path}")
 async def get_image(image_path: str):
