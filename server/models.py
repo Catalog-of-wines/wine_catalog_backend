@@ -1,5 +1,4 @@
-import os
-from typing import Optional, List
+from typing import Optional, Dict, List
 
 from pydantic import BaseModel,  EmailStr
 
@@ -21,6 +20,7 @@ class Comment(BaseModel):
 
 
 class Wine(BaseModel):
+    _id: str
     kind: str
     name: str
     color: str
@@ -38,9 +38,10 @@ class Wine(BaseModel):
     diameter: str
     supplier: str
     price: str
-    # comments: List[comment_id] = []_id: int # надо подправить
     image_url: str
     small_image_url: str
+    description: Dict[str, str]
+    # comments: List[comment_id] = []_id: int # надо подправить
 
 
 
