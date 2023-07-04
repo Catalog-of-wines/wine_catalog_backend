@@ -20,7 +20,7 @@ class Comment(BaseModel):
 
 
 class Wine(BaseModel):
-    _id: str
+    id: str
     kind: str
     name: str
     color: str
