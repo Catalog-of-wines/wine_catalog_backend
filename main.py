@@ -1,8 +1,8 @@
 import os
 
 import motor.motor_asyncio
-from fastapi import FastAPI, HTTPException
-from fastapi import Query
+from fastapi import FastAPI, HTTPException, Query
+from fastapi import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,12 +11,12 @@ from dotenv import load_dotenv
 from passlib.context import CryptContext
 from typing import Optional
 
+from server.models import Wine
 from server.validation_functions import is_valid_password, is_valid_name, is_valid_phone, is_valid_email
 
 app = FastAPI()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGES_DIR = os.path.join(BASE_DIR, "images")
+
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -47,6 +47,17 @@ async def root():
     return {"message": "This is root page Catalog of wine"}
 
 
+def process_wine(wine, request: Request):
+    wine_model = Wine(**wine)
+
+    image_url = str(request.url_for("images", path=wine_model.image_url))
+    wine_model.image_url = image_url
+
+    small_image_url = str(request.url_for("images", path=wine_model.small_image_url))
+    wine_model.small_image_url = small_image_url
+
+    return wine_model
+
 @app.get("/catalog/")
 async def get_catalog(limit: int = 9, skip: int = 0):
     wines = []
@@ -59,13 +70,21 @@ async def get_catalog(limit: int = 9, skip: int = 0):
 
 
 @app.get("/catalog/{wine_id}/")
-async def get_bottle(wine_id: str):
+async def get_bottle(wine_id: str, request: Request):
     try:
         wine_id_obj = ObjectId(wine_id)
         wine = await collection.find_one({"_id": wine_id_obj})
         if wine:
             wine["_id"] = str(wine["_id"])
-            return wine
+            wine_model = Wine(**wine)
+
+            image_url = str(request.url_for("images", path=wine_model.image_url))
+            wine_model.image_url = image_url
+
+            small_image_url = str(request.url_for("images", path=wine_model.small_image_url))
+            wine_model.small_image_url = small_image_url
+
+            return wine_model
         else:
             raise HTTPException(status_code=404, detail="Wine not found")
     except Exception as e:
@@ -237,10 +256,13 @@ async def register_user(name: str, email: str, password: str, phone: Optional[st
 
     return {"message": "User registered successfully", "user_id": user_id}
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
 app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
-@app.get("/api/images/{image_path:path}")
+@app.get("/images/{image_path:path}")
 async def get_image(image_path: str):
     full_path = os.path.join(IMAGES_DIR, image_path)
     return FileResponse(full_path)
+

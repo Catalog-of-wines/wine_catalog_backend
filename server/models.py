@@ -1,3 +1,4 @@
+import os
 from typing import Optional, List
 
 from pydantic import BaseModel,  EmailStr
@@ -37,6 +38,21 @@ class Wine(BaseModel):
     diameter: str
     supplier: str
     price: str
+    # comments: List[comment_id] = []_id: int # надо подправить
     image_url: str
     small_image_url: str
-    # comments: List[comment_id] = []_id: int # надо подправить
+
+    # @property
+    # def full_image_path(self) -> str:
+    #     base_dir = os.path.dirname(os.path.abspath(__file__))
+    #     images_dir = os.path.join(base_dir, "images")
+    #     image_path = os.path.join(images_dir, self.image_url)
+    #     return image_path
+    #
+    # @property
+    # def full_small_image_path(self) -> str:
+    #     base_dir = os.path.dirname(os.path.abspath(__file__))
+    #     images_dir = os.path.join(base_dir, "images")
+    #     image_path = os.path.join(images_dir, self.small_image_url)
+    #     return image_path
+
