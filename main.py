@@ -1,21 +1,22 @@
-# import uvicorn
-#
-# if __name__ == "__main__":
-#     uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
 import os
-from typing import Optional
 
-from bson import ObjectId
+import motor.motor_asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi import Query
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from bson import ObjectId
 from dotenv import load_dotenv
-import motor.motor_asyncio
 from passlib.context import CryptContext
+from typing import Optional
 
 from server.validation_functions import is_valid_password, is_valid_name, is_valid_phone, is_valid_email
 
 app = FastAPI()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -235,3 +236,11 @@ async def register_user(name: str, email: str, password: str, phone: Optional[st
     user_id = str(result.inserted_id)
 
     return {"message": "User registered successfully", "user_id": user_id}
+
+
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
+
+@app.get("/api/images/{image_path:path}")
+async def get_image(image_path: str):
+    full_path = os.path.join(IMAGES_DIR, image_path)
+    return FileResponse(full_path)
