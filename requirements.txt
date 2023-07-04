@@ -19,6 +19,7 @@ cryptography==41.0.1
 cssselect==1.2.0
 dnspython==2.3.0
 docutils==0.20.1
+email-validator==2.0.0.post2
 exceptiongroup==1.1.1
 fastapi==0.96.0
 filelock==3.12.0
