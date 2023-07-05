@@ -1,5 +1,6 @@
 from typing import Optional, Dict, List
 
+from bson import ObjectId
 from pydantic import BaseModel,  EmailStr
 
 
@@ -16,7 +17,7 @@ class User(BaseModel):
 class Comment(BaseModel):
     text: str
     wine_id: str
-    # user: User_id # надо подправить
+    user_id: str
 
 
 class Wine(BaseModel):
