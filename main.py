@@ -10,13 +10,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from passlib.context import CryptContext
 
-from server.models import Wine
-from server.validation_functions import (
-    is_valid_email,
-    is_valid_name,
-    is_valid_password,
-    is_valid_phone,
-)
+
+from server.models import Wine, Comment
+from server.validation_functions import is_valid_password, is_valid_name, is_valid_email
+
 
 app = FastAPI()
 
@@ -46,6 +43,7 @@ db = client.catalog
 collection = db["wines"]
 aroma_list_collection = db["aroma_list"]
 users_collection = db["users"]
+comments_collection = db["comments"]
 
 
 @app.get("/")
@@ -245,9 +243,6 @@ async def register_user(
     if not is_valid_email(email):
         raise HTTPException(status_code=400, detail="Invalid email")
 
-    if not is_valid_phone(phone):
-        raise HTTPException(status_code=400, detail="Invalid phone number")
-
     if not is_valid_password(password):
         raise HTTPException(
             status_code=400,
@@ -274,8 +269,36 @@ async def register_user(
 
     return {"message": "User registered successfully", "user_id": user_id}
 
+# @app.post("/comments/")
+# async def create_comment(comment: Comment):
+#     # Create a new comment document in the database
+#
+#     comment_document = {
+#         "user_id": comment.user_id,
+#         "wine_id": comment.wine_id,
+#         "text": comment.text
+#     }
+#     new_comment = await db.comments.insert_one(comment_document)
+#     comment_id = str(new_comment.inserted_id)
+#     return {"comment_id": comment_id}
+
+
+async def get_comments_by_wine_id(wine_id: str):
+    comments = await db.comments.find({"wine_id": wine_id}).to_list(length=None)
+    comments_with_str_id = [
+        {**comment, "_id": str(comment["_id"])} for comment in comments
+    ]
+    return comments_with_str_id
+
+
+@app.get("/wine/{wine_id}/comments")
+async def get_wine_comments(wine_id: str):
+    comments = await get_comments_by_wine_id(wine_id)
+    return comments
+
 
 @app.get("/images/{image_path:path}")
 async def get_image(image_path: str):
     full_path = os.path.join(IMAGES_DIR, image_path)
     return FileResponse(full_path)
+
