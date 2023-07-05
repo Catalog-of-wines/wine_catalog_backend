@@ -12,7 +12,7 @@ from passlib.context import CryptContext
 from typing import Optional
 
 from server.models import Wine
-from server.validation_functions import is_valid_password, is_valid_name, is_valid_phone, is_valid_email
+from server.validation_functions import is_valid_password, is_valid_name, is_valid_email
 
 app = FastAPI()
 
@@ -238,9 +238,6 @@ async def register_user(name: str, email: str, password: str, phone: Optional[st
 
     if not is_valid_email(email):
         raise HTTPException(status_code=400, detail="Invalid email")
-
-    if not is_valid_phone(phone):
-        raise HTTPException(status_code=400, detail="Invalid phone number")
 
     if not is_valid_password(password):
         raise HTTPException(
