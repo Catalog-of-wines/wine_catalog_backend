@@ -1,18 +1,19 @@
 import os
+from typing import Optional
 
 import motor.motor_asyncio
-from fastapi import FastAPI, HTTPException, Query
-from fastapi import Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from passlib.context import CryptContext
-from typing import Optional
+
 
 from server.models import Wine, Comment
 from server.validation_functions import is_valid_password, is_valid_name, is_valid_email
+
 
 app = FastAPI()
 
@@ -72,7 +73,7 @@ def process_wine(wine, request: Request):
         price=wine["price"],
         image_url=str(request.url_for("images", path=wine["image_url"])),
         small_image_url=str(request.url_for("images", path=wine["small_image_url"])),
-        description=wine["description"]
+        description=wine["description"],
     )
     return wine_model
 
@@ -229,7 +230,9 @@ async def get_festive(request: Request, limit: int = 9):
 
 
 @app.post("/register")
-async def register_user(name: str, email: str, password: str, phone: Optional[str] = None):
+async def register_user(
+    name: str, email: str, password: str, phone: Optional[str] = None
+):
 
     if not name or not email or not password:
         raise HTTPException(status_code=400, detail="Missing required fields")
@@ -298,5 +301,4 @@ async def get_wine_comments(wine_id: str):
 async def get_image(image_path: str):
     full_path = os.path.join(IMAGES_DIR, image_path)
     return FileResponse(full_path)
-
 
