@@ -269,18 +269,17 @@ async def register_user(
 
     return {"message": "User registered successfully", "user_id": user_id}
 
-# @app.post("/comments/")
-# async def create_comment(comment: Comment):
-#     # Create a new comment document in the database
-#
-#     comment_document = {
-#         "user_id": comment.user_id,
-#         "wine_id": comment.wine_id,
-#         "text": comment.text
-#     }
-#     new_comment = await db.comments.insert_one(comment_document)
-#     comment_id = str(new_comment.inserted_id)
-#     return {"comment_id": comment_id}
+
+@app.post("/comments/")
+async def create_comment(comment: Comment):
+    comment_document = {
+        "user_id": comment.user_id,
+        "wine_id": comment.wine_id,
+        "text": comment.text
+    }
+    new_comment = await db.comments.insert_one(comment_document)
+    comment_id = str(new_comment.inserted_id)
+    return {"comment_id": comment_id}
 
 
 async def get_comments_by_wine_id(wine_id: str):
