@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 import motor.motor_asyncio
 from bson import ObjectId
@@ -10,10 +10,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from passlib.context import CryptContext
 
-
-from server.models import Wine, Comment
-from server.validation_functions import is_valid_password, is_valid_name, is_valid_email
-
+from server.models import Comment, Wine
+from server.validation_functions import (is_valid_email, is_valid_name,
+                                         is_valid_password)
 
 app = FastAPI()
 
@@ -46,7 +45,6 @@ users_collection = db["users"]
 comments_collection = db["comments"]
 
 
-
 @app.get("/")
 async def root():
     return {"message": "This is root page Catalog of wine"}
@@ -73,7 +71,9 @@ def process_wine(wine, request: Request):
         alcohol_percentage=wine["alcohol_percentage"],
         producer=wine["producer"],
         glass=glass if glass is not None else "-",
-        gastronomic_combination=gastronomic_combination if gastronomic_combination is not None else "-",
+        gastronomic_combination=gastronomic_combination
+        if gastronomic_combination is not None
+        else "-",
         grape=wine["grape"],
         vintage=vintage if vintage is not None else "-",
         diameter=diameter if diameter is not None else "-",
@@ -98,23 +98,24 @@ async def get_catalog(request: Request, limit: int = 9, skip: int = 0):
 
 
 @app.get("/catalog/with-package/")
-async def get_catalog_with_package(request: Request, skip: int = 0):
+async def get_catalog_with_package(request: Request, limit: int = 9, skip: int = 0):
     wines = []
-    cursor = collection.find({"package": "подарункова упаковка"}).skip(skip)
+    cursor = (
+        collection.find({"package": "подарункова упаковка"}).limit(limit).skip(skip)
+    )
     async for document in cursor:
         wine = document.copy()
         processed_wine = process_wine(wine, request)
         wines.append(processed_wine)
     return wines
 
-
-# You'll get the list of countries if you make query with full name (e.g. "Італія (Italy)")
+# countries must be a list of strings if format "Італія (Italy), Іспанія (Spain)"
 @app.get("/catalog/by-country/")
 async def get_catalog_by_country(
     request: Request,
+    countries: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
-    countries: Optional[List[str]] = Query(None),
 ):
     wines = []
     if countries:
@@ -133,9 +134,9 @@ async def get_catalog_by_country(
 @app.get("/catalog/by-color/")
 async def get_catalog_by_color(
     request: Request,
+    colors: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
-    colors: Optional[List[str]] = Query(None),
 ):
     wines = []
     if colors:
@@ -154,9 +155,9 @@ async def get_catalog_by_color(
 @app.get("/catalog/by-wine-type/")
 async def get_catalog_by_wine_type(
     request: Request,
+    wine_types: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
-    wine_types: Optional[List[str]] = Query(None),
 ):
     wines = []
     if wine_types:
@@ -175,9 +176,9 @@ async def get_catalog_by_wine_type(
 @app.get("/catalog/by-capacity/")
 async def get_catalog_by_capacity(
     request: Request,
+    capacities: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
-    capacities: Optional[List[str]] = Query(None),
 ):
     wines = []
     if capacities:
@@ -379,7 +380,7 @@ async def create_comment(comment: Comment):
     comment_document = {
         "user_id": comment.user_id,
         "wine_id": comment.wine_id,
-        "text": comment.text
+        "text": comment.text,
     }
     new_comment = await db.comments.insert_one(comment_document)
     comment_id = str(new_comment.inserted_id)
@@ -404,4 +405,3 @@ async def get_wine_comments(wine_id: str):
 async def get_image(image_path: str):
     full_path = os.path.join(IMAGES_DIR, image_path)
     return FileResponse(full_path)
-

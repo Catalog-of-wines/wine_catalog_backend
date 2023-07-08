@@ -1,7 +1,6 @@
-from typing import Optional, Dict, List
+from typing import Dict, Optional
 
-from bson import ObjectId
-from pydantic import BaseModel,  EmailStr
+from pydantic import BaseModel, EmailStr
 
 
 class User(BaseModel):
@@ -42,7 +41,3 @@ class Wine(BaseModel):
     image_url: str
     small_image_url: str
     description: Dict[str, str]
-    # comments: List[comment_id] = []_id: int # надо подправить
-
-
-
