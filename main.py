@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 import motor.motor_asyncio
 from bson import ObjectId
@@ -46,29 +46,37 @@ users_collection = db["users"]
 comments_collection = db["comments"]
 
 
+
 @app.get("/")
 async def root():
     return {"message": "This is root page Catalog of wine"}
 
 
 def process_wine(wine, request: Request):
+    vintage = wine.get("vintage")
+    diameter = wine.get("diameter")
+    brand = wine.get("brand")
+    glass = wine.get("glass")
+    gastronomic_combination = wine.get("gastronomic_combination")
+    color = wine.get("color")
+
     wine_model = Wine(
         id=str(wine["_id"]),
         kind=wine["kind"],
         name=wine["name"],
-        color=wine["color"],
+        color=color if color is not None else "-",
         wine_type=wine["wine_type"],
         capacity=wine["capacity"],
         package=wine["package"],
         country=wine["country"],
-        brand=wine["brand"],
+        brand=brand if brand is not None else "-",
         alcohol_percentage=wine["alcohol_percentage"],
         producer=wine["producer"],
-        glass=wine["glass"],
-        gastronomic_combination=wine["gastronomic_combination"],
+        glass=glass if glass is not None else "-",
+        gastronomic_combination=gastronomic_combination if gastronomic_combination is not None else "-",
         grape=wine["grape"],
-        vintage=wine["vintage"],
-        diameter=wine["diameter"],
+        vintage=vintage if vintage is not None else "-",
+        diameter=diameter if diameter is not None else "-",
         supplier=wine["supplier"],
         price=wine["price"],
         image_url=str(request.url_for("images", path=wine["image_url"])),
@@ -82,6 +90,102 @@ def process_wine(wine, request: Request):
 async def get_catalog(request: Request, limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find().limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
+    return wines
+
+
+@app.get("/catalog/with-package/")
+async def get_catalog_with_package(request: Request, skip: int = 0):
+    wines = []
+    cursor = collection.find({"package": "подарункова упаковка"}).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
+    return wines
+
+
+# You'll get the list of countries if you make query with full name (e.g. "Італія (Italy)")
+@app.get("/catalog/by-country/")
+async def get_catalog_by_country(
+    request: Request,
+    limit: int = 9,
+    skip: int = 0,
+    countries: Optional[List[str]] = Query(None),
+):
+    wines = []
+    if countries:
+        query = {"country": {"$in": countries}}
+    else:
+        query = {}
+
+    cursor = collection.find(query).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
+    return wines
+
+
+@app.get("/catalog/by-color/")
+async def get_catalog_by_color(
+    request: Request,
+    limit: int = 9,
+    skip: int = 0,
+    colors: Optional[List[str]] = Query(None),
+):
+    wines = []
+    if colors:
+        query = {"color": {"$in": colors}}
+    else:
+        query = {}
+
+    cursor = collection.find(query).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
+    return wines
+
+
+@app.get("/catalog/by-wine-type/")
+async def get_catalog_by_wine_type(
+    request: Request,
+    limit: int = 9,
+    skip: int = 0,
+    wine_types: Optional[List[str]] = Query(None),
+):
+    wines = []
+    if wine_types:
+        query = {"wine_type": {"$in": wine_types}}
+    else:
+        query = {}
+
+    cursor = collection.find(query).limit(limit).skip(skip)
+    async for document in cursor:
+        wine = document.copy()
+        processed_wine = process_wine(wine, request)
+        wines.append(processed_wine)
+    return wines
+
+
+@app.get("/catalog/by-capacity/")
+async def get_catalog_by_capacity(
+    request: Request,
+    limit: int = 9,
+    skip: int = 0,
+    capacities: Optional[List[str]] = Query(None),
+):
+    wines = []
+    if capacities:
+        query = {"capacity": {"$in": capacities}}
+    else:
+        query = {}
+
+    cursor = collection.find(query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
         processed_wine = process_wine(wine, request)
