@@ -97,7 +97,7 @@ async def get_catalog(request: Request, limit: int = 9, skip: int = 0):
     return wines
 
 
-@app.get("/catalog/with-package/")
+@app.get("/with-package/")
 async def get_catalog_with_package(request: Request, limit: int = 9, skip: int = 0):
     wines = []
     cursor = (
@@ -109,8 +109,9 @@ async def get_catalog_with_package(request: Request, limit: int = 9, skip: int =
         wines.append(processed_wine)
     return wines
 
+
 # countries must be a list of strings if format "Італія (Italy), Іспанія (Spain)"
-@app.get("/catalog/by-country/")
+@app.get("/by-country/")
 async def get_catalog_by_country(
     request: Request,
     countries: Optional[List[str]] = Query(None),
@@ -131,7 +132,7 @@ async def get_catalog_by_country(
     return wines
 
 
-@app.get("/catalog/by-color/")
+@app.get("/by-color/")
 async def get_catalog_by_color(
     request: Request,
     colors: Optional[List[str]] = Query(None),
@@ -152,7 +153,7 @@ async def get_catalog_by_color(
     return wines
 
 
-@app.get("/catalog/by-wine-type/")
+@app.get("/by-wine-type/")
 async def get_catalog_by_wine_type(
     request: Request,
     wine_types: Optional[List[str]] = Query(None),
@@ -173,7 +174,7 @@ async def get_catalog_by_wine_type(
     return wines
 
 
-@app.get("/catalog/by-capacity/")
+@app.get("/by-capacity/")
 async def get_catalog_by_capacity(
     request: Request,
     capacities: Optional[List[str]] = Query(None),
@@ -381,6 +382,7 @@ async def create_comment(comment: Comment):
         "user_id": comment.user_id,
         "wine_id": comment.wine_id,
         "text": comment.text,
+        "rating": comment.rating
     }
     new_comment = await db.comments.insert_one(comment_document)
     comment_id = str(new_comment.inserted_id)

@@ -17,7 +17,7 @@ class Comment(BaseModel):
     text: str
     wine_id: str
     user_id: str
-
+    rating: int
 
 class Wine(BaseModel):
     id: str
