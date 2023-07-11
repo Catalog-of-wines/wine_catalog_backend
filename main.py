@@ -376,6 +376,18 @@ async def register_user(
     return {"message": "User registered successfully", "user_id": user_id}
 
 
+@app.get("/{user_id}")
+async def get_personal_account(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if user:
+        user_data = {
+            "id": str(user["_id"]),
+            "name": user["name"]
+        }
+        return user_data
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+
 @app.post("/comments/")
 async def create_comment(comment: Comment):
     comment_document = {
