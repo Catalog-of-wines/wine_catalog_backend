@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List, Optional
 
@@ -47,8 +48,28 @@ users_collection = db["users"]
 comments_collection = db["comments"]
 
 
+# Создание логгера
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Настройка обработчика для вывода логов в консоль
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+
+# Настройка формата вывода логов
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+# Добавление обработчика к логгеру
+logger.addHandler(handler)
+
+
 @app.get("/")
 async def root():
+    logger.debug("This is a debug message")
+    logger.info("This is an info message")
+    logger.warning("This is a warning message")
+    logger.error("This is an error message")
     return {"message": "This is root page Catalog of wine"}
 
 
