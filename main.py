@@ -51,6 +51,7 @@ async def root():
 
 
 def process_wine(wine, request: Request):
+    base_url = str(request.base_url)
     vintage = wine.get("vintage")
     diameter = wine.get("diameter")
     brand = wine.get("brand")
@@ -79,8 +80,8 @@ def process_wine(wine, request: Request):
         diameter=diameter if diameter is not None else "-",
         supplier=wine["supplier"],
         price=wine["price"],
-        image_url=str(request.url_for("images", path=wine["image_url"])),
-        small_image_url=str(request.url_for("images", path=wine["small_image_url"])),
+        image_url=base_url + "images/" + wine["image_url"],
+        small_image_url=base_url + "images/" + wine["small_image_url"],
         description=wine["description"],
     )
     return wine_model
@@ -376,7 +377,7 @@ async def register_user(
     return {"message": "User registered successfully", "user_id": user_id}
 
 
-@app.get("/{user_id}")
+@app.get("/user/{user_id}")
 async def get_personal_account(user_id: str):
     user = await users_collection.find_one({"_id": ObjectId(user_id)})
     if user:
@@ -387,6 +388,7 @@ async def get_personal_account(user_id: str):
         return user_data
     else:
         raise HTTPException(status_code=404, detail="User not found")
+
 
 @app.post("/comments/")
 async def create_comment(comment: Comment):

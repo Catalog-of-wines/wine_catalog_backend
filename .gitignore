@@ -4,3 +4,4 @@ __pycache__/
 .python-version
 parser/images/
 /scripts for DB/
+/winecatalog.pem
