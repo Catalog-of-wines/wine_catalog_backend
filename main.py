@@ -16,6 +16,8 @@ from server.validation_functions import (is_valid_email, is_valid_name,
 
 app = FastAPI()
 
+BASE_URL = "http://3.123.93.54/"
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGES_DIR = os.path.join(BASE_DIR, "images")
 app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
@@ -50,8 +52,7 @@ async def root():
     return {"message": "This is root page Catalog of wine"}
 
 
-def process_wine(wine, request: Request):
-    base_url = str(request.base_url)
+def process_wine(wine):
     vintage = wine.get("vintage")
     diameter = wine.get("diameter")
     brand = wine.get("brand")
@@ -80,8 +81,8 @@ def process_wine(wine, request: Request):
         diameter=diameter if diameter is not None else "-",
         supplier=wine["supplier"],
         price=wine["price"],
-        image_url=base_url + "images/" + wine["image_url"],
-        small_image_url=base_url + "images/" + wine["small_image_url"],
+        image_url=BASE_URL + "images/" + wine["image_url"],
+        small_image_url=BASE_URL + "images/" + wine["small_image_url"],
         description=wine["description"],
     )
     return wine_model
@@ -93,7 +94,7 @@ async def get_catalog(request: Request, limit: int = 9, skip: int = 0):
     cursor = collection.find().limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -106,7 +107,7 @@ async def get_catalog_with_package(request: Request, limit: int = 9, skip: int =
     )
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -128,7 +129,7 @@ async def get_catalog_by_country(
     cursor = collection.find(query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -149,7 +150,7 @@ async def get_catalog_by_color(
     cursor = collection.find(query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -170,7 +171,7 @@ async def get_catalog_by_wine_type(
     cursor = collection.find(query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -191,7 +192,7 @@ async def get_catalog_by_capacity(
     cursor = collection.find(query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -202,7 +203,7 @@ async def get_bottle(wine_id: str, request: Request):
         wine_id_obj = ObjectId(wine_id)
         wine = await collection.find_one({"_id": wine_id_obj})
         if wine:
-            processed_wine = process_wine(wine, request)
+            processed_wine = process_wine(wine)
             return processed_wine
         else:
             raise HTTPException(status_code=404, detail="Wine not found")
@@ -216,7 +217,7 @@ async def get_wine(request: Request, limit: int = 9, skip: int = 0):
     cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -231,7 +232,7 @@ async def get_champagne(request: Request, limit: int = 9, skip: int = 0):
     )
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         champagne.append(processed_wine)
     return champagne
 
@@ -263,7 +264,7 @@ async def get_by_aroma(
     cursor = collection.find(filter_query).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
 
@@ -294,7 +295,7 @@ async def get_by_food(
     cursor = collection.find(filter_query).limit(limit).skip(skip)
     async for document in cursor:
         food = document.copy()
-        processed_wine = process_wine(food, request)
+        processed_wine = process_wine(food)
         foods.append(processed_wine)
     return foods
 
@@ -309,7 +310,7 @@ async def get_romantic(request: Request, limit: int = 9):
     cursor = collection.aggregate(pipeline)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         romantic_wines.append(processed_wine)
     return romantic_wines
 
@@ -331,7 +332,7 @@ async def get_festive(request: Request, limit: int = 9):
     cursor = collection.aggregate(pipeline)
     async for document in cursor:
         wine = document.copy()
-        processed_wine = process_wine(wine, request)
+        processed_wine = process_wine(wine)
         festive_wines.append(processed_wine)
     return festive_wines
 
