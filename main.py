@@ -35,7 +35,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -48,28 +48,10 @@ users_collection = db["users"]
 comments_collection = db["comments"]
 
 
-# Создание логгера
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-# Настройка обработчика для вывода логов в консоль
-handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
-
-# Настройка формата вывода логов
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-# Добавление обработчика к логгеру
-logger.addHandler(handler)
-
-
 @app.get("/")
 async def root():
-    logger.debug("This is a debug message")
-    logger.info("This is an info message")
-    logger.warning("This is a warning message")
-    logger.error("This is an error message")
+    logger = logging.getLogger("uvicorn")
+    logger.info("Received a request to root endpoint")
     return {"message": "This is root page Catalog of wine"}
 
 
@@ -133,10 +115,9 @@ async def get_catalog_with_package(request: Request, limit: int = 9, skip: int =
     return wines
 
 
-# countries must be a list of strings if format "Італія (Italy), Іспанія (Spain)"
+# countries must be a list of strings in format "Італія (Italy), Іспанія (Spain)"
 @app.get("/by-country/")
 async def get_catalog_by_country(
-    request: Request,
     countries: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
@@ -157,7 +138,6 @@ async def get_catalog_by_country(
 
 @app.get("/by-color/")
 async def get_catalog_by_color(
-    request: Request,
     colors: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
@@ -178,7 +158,6 @@ async def get_catalog_by_color(
 
 @app.get("/by-wine-type/")
 async def get_catalog_by_wine_type(
-    request: Request,
     wine_types: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
@@ -199,7 +178,6 @@ async def get_catalog_by_wine_type(
 
 @app.get("/by-capacity/")
 async def get_catalog_by_capacity(
-    request: Request,
     capacities: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
@@ -219,7 +197,7 @@ async def get_catalog_by_capacity(
 
 
 @app.get("/catalog/{wine_id}/")
-async def get_bottle(wine_id: str, request: Request):
+async def get_bottle(wine_id: str):
     try:
         wine_id_obj = ObjectId(wine_id)
         wine = await collection.find_one({"_id": wine_id_obj})
@@ -233,7 +211,7 @@ async def get_bottle(wine_id: str, request: Request):
 
 
 @app.get("/wine/")
-async def get_wine(request: Request, limit: int = 9, skip: int = 0):
+async def get_wine(limit: int = 9, skip: int = 0):
     wines = []
     cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
     async for document in cursor:
@@ -244,7 +222,7 @@ async def get_wine(request: Request, limit: int = 9, skip: int = 0):
 
 
 @app.get("/champagne/")
-async def get_champagne(request: Request, limit: int = 9, skip: int = 0):
+async def get_champagne(limit: int = 9, skip: int = 0):
     champagne = []
     cursor = (
         collection.find({"kind": {"$in": ["prosecco", "Ігристе"]}})
@@ -260,7 +238,6 @@ async def get_champagne(request: Request, limit: int = 9, skip: int = 0):
 
 @app.get("/aroma/")
 async def get_by_aroma(
-    request: Request,
     query: str = Query(
         ..., description="Query parameter - gastronomic_combination separated by coma"
     ),
@@ -303,7 +280,6 @@ async def get_aroma_mappings():
 
 @app.get("/food/")
 async def get_by_food(
-    request: Request,
     query: str = Query(
         ..., description="Query parameter - gastronomic_combination separated by coma"
     ),
@@ -322,7 +298,7 @@ async def get_by_food(
 
 
 @app.get("/romantic/")
-async def get_romantic(request: Request, limit: int = 9):
+async def get_romantic(limit: int = 9):
     romantic_wines = []
     pipeline = [
         {"$match": {"wine_type": {"$in": ["Сододке", "Напівсолодке"]}}},
@@ -337,7 +313,7 @@ async def get_romantic(request: Request, limit: int = 9):
 
 
 @app.get("/festive/")
-async def get_festive(request: Request, limit: int = 9):
+async def get_festive(limit: int = 9):
     festive_wines = []
     pipeline = [
         {
