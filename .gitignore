@@ -5,3 +5,4 @@ __pycache__/
 parser/images/
 /scripts for DB/
 /winecatalog.pem
+.env
