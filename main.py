@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -343,6 +344,22 @@ async def get_festive(limit: int = 9):
     return festive_wines
 
 
+def create_jwt_token(user_id: str) -> str:
+    expiration = datetime.utcnow() + timedelta(minutes=JWT_EXPIRATION_TIME_MINUTES)
+    data = {"user_id": user_id, "exp": expiration}
+    token = jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
+
+
+def decode_jwt_token(token: str) -> dict:
+    try:
+        decoded_data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return decoded_data
+    except PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+
 @app.post("/register")
 async def register_user(
     name: str, email: str, password: str, phone: Optional[str] = None
@@ -377,34 +394,14 @@ async def register_user(
         "password": hashed_password,
     }
     result = await users_collection.insert_one(user_data)
+
+    # Authorization
+
+
     user_id = str(result.inserted_id)
 
     return {"message": "User registered successfully", "user_id": user_id}
 
-
-@app.get("/user/{user_id}")
-async def get_personal_account(user_id: str):
-    user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    if user:
-        user_data = {"id": str(user["_id"]), "name": user["name"]}
-        return user_data
-    else:
-        raise HTTPException(status_code=404, detail="User not found")
-
-
-def create_jwt_token(user_id: str) -> str:
-    expiration = datetime.utcnow() + timedelta(minutes=JWT_EXPIRATION_TIME_MINUTES)
-    data = {"user_id": user_id, "exp": expiration}
-    token = jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
-    return token
-
-
-def decode_jwt_token(token: str) -> dict:
-    try:
-        decoded_data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return decoded_data
-    except PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @app.post("/login")
@@ -424,6 +421,16 @@ async def protected_route(token: str = Query(...)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
     return User(**user)
+
+
+@app.get("/user/{user_id}")
+async def get_personal_account(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if user:
+        user_data = {"id": str(user["_id"]), "name": user["name"]}
+        return user_data
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 @app.post("/comments/")
