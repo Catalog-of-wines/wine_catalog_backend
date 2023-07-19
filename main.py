@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List, Optional
 
 import motor.motor_asyncio
@@ -128,13 +128,13 @@ async def get_catalog_with_package(request: Request, limit: int = 9, skip: int =
 # countries must be a list of strings in format "Італія (Italy), Іспанія (Spain)"
 @app.get("/by-country/")
 async def get_catalog_by_country(
-    countries: Optional[List[str]] = Query(None),
+    query: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
 ):
     wines = []
-    if countries:
-        query = {"country": {"$in": countries}}
+    if query:
+        query = {"country": {"$in": query}}
     else:
         query = {}
 
@@ -148,13 +148,13 @@ async def get_catalog_by_country(
 
 @app.get("/by-color/")
 async def get_catalog_by_color(
-    colors: Optional[List[str]] = Query(None),
+    query: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
 ):
     wines = []
-    if colors:
-        query = {"color": {"$in": colors}}
+    if query:
+        query = {"color": {"$in": query}}
     else:
         query = {}
 
@@ -168,13 +168,13 @@ async def get_catalog_by_color(
 
 @app.get("/by-wine-type/")
 async def get_catalog_by_wine_type(
-    wine_types: Optional[List[str]] = Query(None),
+    query: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
 ):
     wines = []
-    if wine_types:
-        query = {"wine_type": {"$in": wine_types}}
+    if query:
+        query = {"wine_type": {"$in": query}}
     else:
         query = {}
 
@@ -188,13 +188,13 @@ async def get_catalog_by_wine_type(
 
 @app.get("/by-capacity/")
 async def get_catalog_by_capacity(
-    capacities: Optional[List[str]] = Query(None),
+    query: Optional[List[str]] = Query(None),
     limit: int = 9,
     skip: int = 0,
 ):
     wines = []
-    if capacities:
-        query = {"capacity": {"$in": capacities}}
+    if query:
+        query = {"capacity": {"$in": query}}
     else:
         query = {}
 
@@ -442,6 +442,7 @@ async def create_comment(comment: Comment):
         "wine_id": comment.wine_id,
         "text": comment.text,
         "rating": comment.rating,
+        "date": str(date.today())
     }
     new_comment = await db.comments.insert_one(comment_document)
     comment_id = str(new_comment.inserted_id)
