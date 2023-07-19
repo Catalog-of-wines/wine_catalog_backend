@@ -29,7 +29,8 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:3000",
-    "https://superb-malasada-e059fa.netlify.app"
+    "https://superb-malasada-e059fa.netlify.app",
+    "https://64b79ef90dd1ff62287a5770--peppy-seahorse-d9c071.netlify.app/",
 ]
 
 app.add_middleware(
