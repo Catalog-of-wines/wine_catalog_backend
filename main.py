@@ -361,47 +361,49 @@ def decode_jwt_token(token: str) -> dict:
 
 
 @app.post("/register")
-async def register_user(
-    name: str, email: str, password: str, phone: Optional[str] = None
+async def register_user(user: User,
+    # name: str, email: str, password: str, phone: Optional[str] = None
 ):
-    if not name or not email or not password:
+    if not user.name or not user.email or not user.password:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
-    if not is_valid_name(name):
+    if not is_valid_name(user.name):
         raise HTTPException(status_code=400, detail="Invalid name")
 
-    if not is_valid_email(email):
+    if not is_valid_email(user.email):
         raise HTTPException(status_code=400, detail="Invalid email")
 
-    if not is_valid_password(password):
+    if not is_valid_password(user.password):
         raise HTTPException(
             status_code=400,
             detail="Invalid password! When creating a password, please ensure that it meets the following criteria: Must be 8 or more characters in length, contain at least one uppercase letter (A-Z), contain at least one lowercase letter (a-z), contain at least one number (0-9). Please choose a password that fulfills these requirements for enhanced security.",
         )
 
-    existing_user = await users_collection.find_one({"email": email})
+    existing_user = await users_collection.find_one({"email": user.email})
     if existing_user:
         raise HTTPException(
             status_code=409, detail="User with the same email already exists"
         )
 
-    hashed_password = pwd_context.hash(password)
+    hashed_password = pwd_context.hash(user.password)
 
     user_data = {
-        "name": name,
-        "email": email,
-        "phone": phone,
+        "name": user.name,
+        "email": user.email,
+        "phone": user.telephone,
         "password": hashed_password,
     }
     result = await users_collection.insert_one(user_data)
 
-    # Authorization
-
-
     user_id = str(result.inserted_id)
+    token = create_jwt_token(user_id)
 
-    return {"message": "User registered successfully", "user_id": user_id}
-
+    return {
+        "message": "User registered successfully",
+        "user_id": user_id,
+        "token_type": "bearer",
+        "access_token": token,
+    }
 
 
 @app.post("/login")
