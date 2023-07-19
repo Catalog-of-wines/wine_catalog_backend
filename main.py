@@ -1,5 +1,5 @@
-import logging
 import os
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 import motor.motor_asyncio
@@ -9,19 +9,26 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+import jwt
+from jwt import PyJWTError
 from passlib.context import CryptContext
 
-from server.models import Comment, Wine
-from server.validation_functions import (is_valid_email, is_valid_name,
-                                         is_valid_password)
+from server.models import Comment, Wine, User
+from server.validation_functions import is_valid_email, is_valid_name, is_valid_password
 
 app = FastAPI()
 
 BASE_URL = "http://3.123.93.54/"
 
+JWT_SECRET = "5abd14e8157a6bfeed7b88e1b5439fc015d16463024344cbc1bdd6d415299dbd"
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_TIME_MINUTES = 30
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGES_DIR = os.path.join(BASE_DIR, "images")
 app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -37,7 +44,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -340,7 +347,6 @@ async def get_festive(limit: int = 9):
 async def register_user(
     name: str, email: str, password: str, phone: Optional[str] = None
 ):
-
     if not name or not email or not password:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
@@ -362,7 +368,6 @@ async def register_user(
             status_code=409, detail="User with the same email already exists"
         )
 
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hashed_password = pwd_context.hash(password)
 
     user_data = {
@@ -381,13 +386,44 @@ async def register_user(
 async def get_personal_account(user_id: str):
     user = await users_collection.find_one({"_id": ObjectId(user_id)})
     if user:
-        user_data = {
-            "id": str(user["_id"]),
-            "name": user["name"]
-        }
+        user_data = {"id": str(user["_id"]), "name": user["name"]}
         return user_data
     else:
         raise HTTPException(status_code=404, detail="User not found")
+
+
+def create_jwt_token(user_id: str) -> str:
+    expiration = datetime.utcnow() + timedelta(minutes=JWT_EXPIRATION_TIME_MINUTES)
+    data = {"user_id": user_id, "exp": expiration}
+    token = jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
+
+
+def decode_jwt_token(token: str) -> dict:
+    try:
+        decoded_data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return decoded_data
+    except PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+@app.post("/login")
+async def login(email: str, password: str):
+    user = await users_collection.find_one({"email": email})
+    if user and pwd_context.verify(password, user["password"]):
+        token = create_jwt_token(str(user["_id"]))
+        return {"access_token": token, "token_type": "bearer"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+
+@app.get("/protected")
+async def protected_route(token: str = Query(...)):
+    token_data = decode_jwt_token(token)
+    user = await users_collection.find_one({"_id": ObjectId(token_data["user_id"])})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return User(**user)
 
 
 @app.post("/comments/")
@@ -396,7 +432,7 @@ async def create_comment(comment: Comment):
         "user_id": comment.user_id,
         "wine_id": comment.wine_id,
         "text": comment.text,
-        "rating": comment.rating
+        "rating": comment.rating,
     }
     new_comment = await db.comments.insert_one(comment_document)
     comment_id = str(new_comment.inserted_id)
