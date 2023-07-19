@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-
+from datetime import date
 from pydantic import BaseModel, EmailStr
 
 
@@ -18,6 +18,7 @@ class Comment(BaseModel):
     wine_id: str
     user_id: str
     rating: int
+    date: date
 
 class Wine(BaseModel):
     id: str
