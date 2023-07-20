@@ -359,11 +359,8 @@ def decode_jwt_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-
 @app.post("/register")
-async def register_user(user: User,
-    # name: str, email: str, password: str, phone: Optional[str] = None
-):
+async def register_user(user: User):
     if not user.name or not user.email or not user.password:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
@@ -411,18 +408,9 @@ async def login(email: str, password: str):
     user = await users_collection.find_one({"email": email})
     if user and pwd_context.verify(password, user["password"]):
         token = create_jwt_token(str(user["_id"]))
-        return {"access_token": token, "token_type": "bearer"}
+        return {"user_id": str(user["_id"]), "access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-
-
-@app.get("/protected")
-async def protected_route(token: str = Query(...)):
-    token_data = decode_jwt_token(token)
-    user = await users_collection.find_one({"_id": ObjectId(token_data["user_id"])})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return User(**user)
 
 
 @app.get("/user/{user_id}")
@@ -435,18 +423,27 @@ async def get_personal_account(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
 
 
+async def protected_route(token: str = Query(...)):
+    token_data = decode_jwt_token(token)
+    user = await users_collection.find_one({"_id": ObjectId(token_data["user_id"])})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return User(**user)
+
+
 @app.post("/comments/")
-async def create_comment(comment: Comment):
-    comment_document = {
-        "user_id": comment.user_id,
-        "wine_id": comment.wine_id,
-        "text": comment.text,
-        "rating": comment.rating,
-        "date": str(date.today())
-    }
-    new_comment = await db.comments.insert_one(comment_document)
-    comment_id = str(new_comment.inserted_id)
-    return {"comment_id": comment_id}
+async def create_comment(token, comment: Comment):
+    if protected_route(token):
+        comment_document = {
+            "user_id": comment.user_id,
+            "wine_id": comment.wine_id,
+            "text": comment.text,
+            "rating": comment.rating,
+            "date": str(date.today())
+        }
+        new_comment = await db.comments.insert_one(comment_document)
+        comment_id = str(new_comment.inserted_id)
+        return {"comment_id": comment_id}
 
 
 async def get_comments_by_wine_id(wine_id: str):
