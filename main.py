@@ -23,7 +23,7 @@ BASE_URL = "http://3.123.93.54/"
 
 JWT_SECRET = "5abd14e8157a6bfeed7b88e1b5439fc015d16463024344cbc1bdd6d415299dbd"
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_TIME_MINUTES = 30
+JWT_EXPIRATION_TIME_MINUTES = 5000
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGES_DIR = os.path.join(BASE_DIR, "images")
@@ -404,11 +404,11 @@ async def register_user(user: User):
 
 
 @app.post("/login")
-async def login(email: str, password: str):
-    user = await users_collection.find_one({"email": email})
-    if user and pwd_context.verify(password, user["password"]):
-        token = create_jwt_token(str(user["_id"]))
-        return {"user_id": str(user["_id"]), "access_token": token, "token_type": "bearer"}
+async def login(user: User):
+    user_object = await users_collection.find_one({"email": user.email})
+    if user_object and pwd_context.verify(user.password, user_object["password"]):
+        token = create_jwt_token(str(user_object["_id"]))
+        return {"user_id": str(user_object["_id"]), "access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
