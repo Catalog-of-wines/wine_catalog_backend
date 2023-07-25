@@ -18,11 +18,12 @@ from server.models import Comment, Wine, User
 from server.validation_functions import is_valid_email, is_valid_name, is_valid_password
 
 app = FastAPI()
+load_dotenv()
 
-BASE_URL = "http://3.123.93.54/"
+BASE_URL = "https://wine-catalog.pp.ua/"
 
-JWT_SECRET = "5abd14e8157a6bfeed7b88e1b5439fc015d16463024344cbc1bdd6d415299dbd"
-JWT_ALGORITHM = "HS256"
+JWT_SECRET = os.environ["JWT_SECRET"]
+JWT_ALGORITHM = os.environ["JWT_ALGORITHM"]
 JWT_EXPIRATION_TIME_MINUTES = 5000
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,7 +50,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-load_dotenv()
 client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URL"])
 db = client.catalog
 collection = db["wines"]
