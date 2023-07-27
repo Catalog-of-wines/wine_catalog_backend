@@ -39,7 +39,7 @@ async def create_comment(comment: Comment, token: str = Header(...)):
     return {"comment_id": comment_id}
 
 
-async def get_comments_by_wine_id(wine_id: str, response_model=list[Comment]):
+async def get_comments_by_wine_id(wine_id: str):
     comments = await comments_collection.find({"wine_id": wine_id}).to_list(length=None)
     comments_with_str_id = [
         {**comment, "_id": str(comment["_id"])} for comment in comments
