@@ -6,3 +6,4 @@ parser/images/
 /scripts for DB/
 /winecatalog.pem
 .env
+parser/parser/spiders/spider_champagne.py
