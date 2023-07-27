@@ -1,30 +1,14 @@
 # wine/app/product/routes.py:
-from typing import List, Optional, Annotated
-
 from bson import ObjectId
-from fastapi import APIRouter, Query, HTTPException, Depends
+from fastapi import APIRouter, Query, HTTPException
 
 from app.database import aroma_list_collection, collection
+from app.dependencies import CommonsDep
 from app.models import Wine
 from app.product.utils import process_wine
 
 
 router_products = APIRouter()
-
-async def common_parameters(
-        query:  Optional[List[str]] = Query(None),
-        limit: int = Query(9, gt=0, description="Number of records to return"),
-        skip: int = Query(0, ge=0, description="Number of records to skip")
-):
-    # if query is None:
-    #     query = []
-    return {
-        "query": query,
-        "limit": limit,
-        "skip": skip,
-    }
-
-CommonsDep = Annotated[dict, Depends(common_parameters)]
 
 
 @router_products.get("/catalog/", tags=["products"], response_model=list[Wine])
