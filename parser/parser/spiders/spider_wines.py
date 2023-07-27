@@ -1,8 +1,32 @@
 import os
+
 import requests
 import scrapy
 from scrapy.http import Response
+
 from ..items import WineItem
+
+HEADER_MAPPING = {
+    "Назва укр.": "name",
+    "Колір": "color",
+    "Тип": "wine_type",
+    "Бренд": "brand",
+    "Літраж": "capacity",
+    "В ящику шт.": "in_box",
+    "Упаковка": "package",
+    "Міцність": "alcohol_percentage",
+    "Країна": "country",
+    "Регіон": "region",
+    "Виробник": "producer",
+    "Форма келиху": "glass",
+    "Подавати за температури, С": "temperature",
+    "Гастрономічне поєднання": "gastronomic_combination",
+    "Виноград": "grape",
+    "Вінтаж": "vintage",
+    "Чи потрібна декантація": "decantation",
+    "Діаметр пляшки": "diameter",
+    "Постачальник": "supplier",
+}
 
 
 def download_image(url, filename):
@@ -54,30 +78,8 @@ class SpiderWinesSpider(scrapy.Spider):
                 header = header.strip()
                 value = value.strip()
 
-                header_mapping = {
-                    "Назва укр.": "name",
-                    "Колір": "color",
-                    "Тип": "wine_type",
-                    "Бренд": "brand",
-                    "Літраж": "capacity",
-                    "В ящику шт.": "in_box",
-                    "Упаковка": "package",
-                    "Міцність": "alcohol_percentage",
-                    "Країна": "country",
-                    "Регіон": "region",
-                    "Виробник": "producer",
-                    "Форма келиху": "glass",
-                    "Подавати за температури, С": "temperature",
-                    "Гастрономічне поєднання": "gastronomic_combination",
-                    "Виноград": "grape",
-                    "Вінтаж": "vintage",
-                    "Чи потрібна декантація": "decantation",
-                    "Діаметр пляшки": "diameter",
-                    "Постачальник": "supplier",
-                }
-
-                if header in header_mapping:
-                    field_name = header_mapping[header]
+                if header in HEADER_MAPPING:
+                    field_name = HEADER_MAPPING[header]
                     data[field_name] = value
 
         price = response.css(".product-price__item::text").get()

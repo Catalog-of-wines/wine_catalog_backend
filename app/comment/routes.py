@@ -1,28 +1,13 @@
-from fastapi import APIRouter
 from datetime import date
 
-from fastapi import HTTPException, Query
-
 from bson import ObjectId
+from fastapi import APIRouter, HTTPException, Query
 
 from app.auth.utils import decode_jwt_token
+from app.database import comments_collection, users_collection
 from app.models import Comment, User
 
-from app.database import (
-    users_collection,
-    comments_collection
-)
-
-
-router = APIRouter()
-
-
-@router.get("/ccc/", tags=["ccc"])
-async def get_temp():
-    return {"message": "This is ccccccccccc"}
-
-
-
+router_comments = APIRouter()
 
 
 async def protected_route(token: str = Query(...)):
@@ -33,7 +18,7 @@ async def protected_route(token: str = Query(...)):
     return User(**user)
 
 
-@router.post("/comments/")
+@router_comments.post("/comments/", tags=["comments"])
 async def create_comment(token, comment: Comment):
     if protected_route(token):
         comment_document = {
@@ -48,7 +33,7 @@ async def create_comment(token, comment: Comment):
         return {"comment_id": comment_id}
 
 
-async def get_comments_by_wine_id(wine_id: str):
+async def get_comments_by_wine_id(wine_id: str, response_model=list[Comment]):
     comments = await comments_collection.find({"wine_id": wine_id}).to_list(length=None)
     comments_with_str_id = [
         {**comment, "_id": str(comment["_id"])} for comment in comments
@@ -56,7 +41,7 @@ async def get_comments_by_wine_id(wine_id: str):
     return comments_with_str_id
 
 
-@router.get("/wine/{wine_id}/comments")
+@router_comments.get("/wine/{wine_id}/comments", tags=["comments"], response_model=list[Comment])
 async def get_wine_comments(wine_id: str):
     comments = await get_comments_by_wine_id(wine_id)
     return comments
