@@ -1,8 +1,8 @@
 # wine/app/product/routes.py:
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
 from bson import ObjectId
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 
 from app.database import aroma_list_collection, collection
 from app.models import Wine
@@ -11,13 +11,27 @@ from app.product.utils import process_wine
 
 router_products = APIRouter()
 
+async def common_parameters(
+        query:  Optional[List[str]] = Query(None),
+        limit: int = Query(9, gt=0, description="Number of records to return"),
+        skip: int = Query(0, ge=0, description="Number of records to skip")
+):
+    # if query is None:
+    #     query = []
+    return {
+        "query": query,
+        "limit": limit,
+        "skip": skip,
+    }
+
+CommonsDep = Annotated[dict, Depends(common_parameters)]
+
 
 @router_products.get("/catalog/", tags=["products"], response_model=list[Wine])
-async def get_catalog(
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog(commons: CommonsDep):
     wines = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     cursor = collection.find().limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
@@ -27,11 +41,10 @@ async def get_catalog(
 
 
 @router_products.get("/with-package/", tags=["products"], response_model=list[Wine])
-async def get_catalog_with_package(
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog_with_package(commons: CommonsDep):
     wines = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     cursor = (
         collection.find({"package": "подарункова упаковка"}).limit(limit).skip(skip)
     )
@@ -44,12 +57,11 @@ async def get_catalog_with_package(
 
 # countries must be a list of strings in format "Італія (Italy), Іспанія (Spain)"
 @router_products.get("/by-country/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_country(
-    query: Optional[List[str]] = Query(None),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog_by_country(commons: CommonsDep):
     wines = []
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
     if query:
         query = {"country": {"$in": query}}
     else:
@@ -64,12 +76,11 @@ async def get_catalog_by_country(
 
 
 @router_products.get("/by-color/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_color(
-    query: Optional[List[str]] = Query(None),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog_by_color(commons: CommonsDep):
     wines = []
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
     if query:
         query = {"color": {"$in": query}}
     else:
@@ -84,12 +95,11 @@ async def get_catalog_by_color(
 
 
 @router_products.get("/by-wine-type/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_wine_type(
-    query: Optional[List[str]] = Query(None),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog_by_wine_type(commons: CommonsDep):
     wines = []
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
     if query:
         query = {"wine_type": {"$in": query}}
     else:
@@ -104,12 +114,11 @@ async def get_catalog_by_wine_type(
 
 
 @router_products.get("/by-capacity/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_capacity(
-    query: Optional[List[str]] = Query(None),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_catalog_by_capacity(commons: CommonsDep):
     wines = []
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
     if query:
         query = {"capacity": {"$in": query}}
     else:
@@ -138,11 +147,10 @@ async def get_bottle(wine_id: str):
 
 
 @router_products.get("/wine/", tags=["products"], response_model=list[Wine])
-async def get_wine(
-        limit: int = Query(9, gt=0, description="Number of records to return"),
-        skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_wine(commons: CommonsDep):
     wines = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     cursor = collection.find({"kind": "wine"}).limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
@@ -152,8 +160,10 @@ async def get_wine(
 
 
 @router_products.get("/champagne/", tags=["products"], response_model=list[Wine])
-async def get_champagne(limit: int = 9, skip: int = 0):
+async def get_champagne(commons: CommonsDep):
     champagne = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     cursor = (
         collection.find({"kind": {"$in": ["prosecco", "Ігристе"]}})
         .limit(limit)
@@ -228,13 +238,13 @@ async def get_by_food(
 
 
 @router_products.get("/romantic/", tags=["products"], response_model=list[Wine])
-async def get_romantic(
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip")
-):
+async def get_romantic(commons: CommonsDep):
     romantic_wines = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     pipeline = [
         {"$match": {"wine_type": {"$in": ["Сододке", "Напівсолодке"]}}},
+        {"$skip": skip},
         {"$sample": {"size": limit}},
     ]
     cursor = collection.aggregate(pipeline)
@@ -246,11 +256,10 @@ async def get_romantic(
 
 
 @router_products.get("/festive/", tags=["products"], response_model=list[Wine])
-async def get_festive(
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip")
-):
+async def get_festive(commons: CommonsDep):
     festive_wines = []
+    limit = commons["limit"]
+    skip = commons["skip"]
     pipeline = [
         {
             "$match": {
@@ -260,6 +269,7 @@ async def get_festive(
                 ]
             }
         },
+        {"$skip": skip},
         {"$sample": {"size": limit}},
     ]
     cursor = collection.aggregate(pipeline)
