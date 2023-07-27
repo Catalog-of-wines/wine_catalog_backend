@@ -1,3 +1,4 @@
+# wine/app/auth/routes.py
 from datetime import date
 
 from bson import ObjectId
@@ -20,17 +21,21 @@ async def protected_route(token: str = Query(...)):
 
 @router_comments.post("/comments/", tags=["comments"])
 async def create_comment(token, comment: Comment):
-    if protected_route(token):
-        comment_document = {
-            "user_id": comment.user_id,
-            "wine_id": comment.wine_id,
-            "text": comment.text,
-            "rating": comment.rating,
-            "date": str(date.today()),
-        }
-        new_comment = await comments_collection.insert_one(comment_document)
-        comment_id = str(new_comment.inserted_id)
-        return {"comment_id": comment_id}
+    try:
+        user = await protected_route(token)
+    except HTTPException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
+
+    comment_document = {
+        "user_id": comment.user_id,
+        "wine_id": comment.wine_id,
+        "text": comment.text,
+        "rating": comment.rating,
+        "date": str(date.today()),
+    }
+    new_comment = await comments_collection.insert_one(comment_document)
+    comment_id = str(new_comment.inserted_id)
+    return {"comment_id": comment_id}
 
 
 async def get_comments_by_wine_id(wine_id: str, response_model=list[Comment]):

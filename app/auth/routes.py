@@ -1,15 +1,15 @@
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 
-from app.auth.utils import create_jwt_token, decode_jwt_token, pwd_context
+from app.auth.utils import create_jwt_token, pwd_context
 from app.auth.validation_functions import (
     is_valid_email,
     is_valid_name,
     is_valid_password,
 )
 from app.database import users_collection
-from app.models import Comment, User
+from app.models import User
 
 router_auth = APIRouter()
 
