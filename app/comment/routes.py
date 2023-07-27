@@ -2,7 +2,7 @@
 from datetime import date
 
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 
 from app.auth.utils import decode_jwt_token
 from app.database import comments_collection, users_collection
@@ -20,7 +20,8 @@ async def protected_route(token: str = Query(...)):
 
 
 @router_comments.post("/comments/", tags=["comments"])
-async def create_comment(token, comment: Comment):
+async def create_comment(comment: Comment, token: str = Header(...)):
+    print("Token", token)
     try:
         user = await protected_route(token)
     except HTTPException as exc:
