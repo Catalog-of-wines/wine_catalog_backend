@@ -169,11 +169,7 @@ async def get_by_aroma(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
 ):
     wines = []
-
-    words = query.split()
-    # words = await get_query_for_aroma_search(query)
-    print("words:", words)
-    search_query = ' '.join(word + '*' for word in words)
+    search_query = await get_query_for_aroma_search(query)
 
     cursor = collection.find(
         {'$text': {'$search': search_query}},

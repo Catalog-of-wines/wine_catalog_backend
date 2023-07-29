@@ -50,9 +50,16 @@ async def get_query_for_aroma_search(query):
         raise HTTPException(
             status_code=500, detail="Word mappings not found in the database"
         )
-
     query_words = query.split(",")
     query_words = [word.strip() for word in query_words]
-    transformed_words = [aroma_mappings.get(word, word) for word in query_words]
+    transformed_words = []
+    for word in query_words:
+        if word in aroma_mappings:
+            word = aroma_mappings.get(word)
+            transformed_words.extend(word)
+        else:
+            transformed_words.append(word)
 
-    return transformed_words
+    search_query = ' '.join(word + '*' for word in transformed_words)
+
+    return search_query
