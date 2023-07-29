@@ -1,6 +1,4 @@
-from itertools import chain
-import re
-
+# wine/app/product/utils.py:
 from fastapi import HTTPException
 
 from app.database import aroma_list_collection

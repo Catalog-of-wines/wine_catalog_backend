@@ -11,7 +11,20 @@ aroma_list_collection = db["aroma_list"]
 users_collection = db["users"]
 comments_collection = db["comments"]
 
+
+# This is the code to restore the existing index if it breaks for some reason
+'''
 try:
-    collection.create_index([('description.aroma', 'text')])
+    collection.drop_index("description.aroma_text")
 except Exception as e:
     pass
+
+try:
+    collection.create_index(
+        [("description.aroma", "text")],
+        default_language="russian",
+        language_override="none",
+    )
+except Exception as e:
+    pass
+'''

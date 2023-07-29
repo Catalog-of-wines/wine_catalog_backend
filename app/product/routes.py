@@ -183,7 +183,6 @@ async def get_by_aroma(
     return wines
 
 
-
 @router_products.get("/aroma_mappings/", tags=["products"])
 async def get_aroma_mappings():
     word_mappings = await aroma_list_collection.find_one()

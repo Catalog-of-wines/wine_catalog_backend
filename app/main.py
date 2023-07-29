@@ -21,7 +21,7 @@ origins = [
     "http://localhost:8080",
     "http://localhost:3000",
     "https://superb-malasada-e059fa.netlify.app",
-    "https://dynamic-mermaid-e471dd.netlify.app/",
+    "https://dynamic-mermaid-e471dd.netlify.app",
 ]
 
 app.add_middleware(
