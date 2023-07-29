@@ -3,7 +3,7 @@ Fastapi project for Wine catalog web application (Fastapi + Node.js)
 (The project in development)
 Frontend part [here](https://github.com/Catalog-of-wines) 
 ### 1. Api is available at: 
-http://3.123.93.54/docs
+https://wine-catalog.pp.ua/docs
 ### 2. How to run locally with Docker:
 - in command line in your IDE
 ```

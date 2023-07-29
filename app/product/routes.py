@@ -5,8 +5,7 @@ from fastapi import APIRouter, Query, HTTPException
 from app.database import aroma_list_collection, collection
 from app.dependencies import CommonsDep
 from app.models import Wine
-from app.product.utils import process_wine
-
+from app.product.utils import process_wine, get_query_for_aroma_search
 
 router_products = APIRouter()
 
@@ -16,6 +15,7 @@ async def get_catalog(commons: CommonsDep):
     wines = []
     limit = commons["limit"]
     skip = commons["skip"]
+
     cursor = collection.find().limit(limit).skip(skip)
     async for document in cursor:
         wine = document.copy()
@@ -168,27 +168,24 @@ async def get_by_aroma(
     limit: int = Query(9, gt=0, description="Number of records to return"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
 ):
-    aroma_mappings = await aroma_list_collection.find_one()
-    if not aroma_mappings:
-        raise HTTPException(
-            status_code=500, detail="Word mappings not found in the database"
-        )
-
     wines = []
-    query_words = query.split(",")
-    transformed_words = [aroma_mappings.get(word, word) for word in query_words]
 
-    regex_pattern = "(?=.*{})" * len(transformed_words)
-    regex_pattern = regex_pattern.format(*transformed_words)
-    regex_query = {"$regex": regex_pattern, "$options": "i"}
+    words = query.split()
+    # words = await get_query_for_aroma_search(query)
+    print("words:", words)
+    search_query = ' '.join(word + '*' for word in words)
 
-    filter_query = {"description.aroma": regex_query}
-    cursor = collection.find(filter_query).limit(limit).skip(skip)
+    cursor = collection.find(
+        {'$text': {'$search': search_query}},
+        {'score': {'$meta': 'textScore'}}
+    ).sort([('score', {'$meta': 'textScore'})]).limit(limit).skip(skip)
+
     async for document in cursor:
         wine = document.copy()
         processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
+
 
 
 @router_products.get("/aroma_mappings/", tags=["products"])

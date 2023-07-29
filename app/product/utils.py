@@ -1,3 +1,9 @@
+from itertools import chain
+import re
+
+from fastapi import HTTPException
+
+from app.database import aroma_list_collection
 from app.models import Wine
 from app.settings import settings
 
@@ -37,3 +43,16 @@ def process_wine(wine):
     )
     return wine_model
 
+
+async def get_query_for_aroma_search(query):
+    aroma_mappings = await aroma_list_collection.find_one()
+    if not aroma_mappings:
+        raise HTTPException(
+            status_code=500, detail="Word mappings not found in the database"
+        )
+
+    query_words = query.split(",")
+    query_words = [word.strip() for word in query_words]
+    transformed_words = [aroma_mappings.get(word, word) for word in query_words]
+
+    return transformed_words

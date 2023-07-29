@@ -21,9 +21,9 @@ async def protected_route(token: str = Query(...)):
 
 @router_comments.post("/comments/", tags=["comments"])
 async def create_comment(comment: Comment, token: str = Header(...)):
-    print("Token", token)
+
     try:
-        user = await protected_route(token)
+        _ = await protected_route(token)
     except HTTPException as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail)
 

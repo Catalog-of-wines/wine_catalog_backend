@@ -5,7 +5,13 @@ from app.settings import settings
 
 client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URL)
 db = client.catalog
+
 collection = db["wines"]
 aroma_list_collection = db["aroma_list"]
 users_collection = db["users"]
 comments_collection = db["comments"]
+
+try:
+    collection.create_index([('description.aroma', 'text')])
+except Exception as e:
+    pass
