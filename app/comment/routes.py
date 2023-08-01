@@ -2,6 +2,7 @@
 from datetime import date
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, Query, Header
 
 from app.auth.utils import decode_jwt_token
@@ -49,5 +50,10 @@ async def get_comments_by_wine_id(wine_id: str):
 
 @router_comments.get("/wine/{wine_id}/comments", tags=["comments"], response_model=list[Comment])
 async def get_wine_comments(wine_id: str):
-    comments = await get_comments_by_wine_id(wine_id)
-    return comments
+    try:
+        comments = await get_comments_by_wine_id(wine_id)
+        return comments
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid wine ID")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

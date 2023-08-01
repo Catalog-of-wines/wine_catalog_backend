@@ -1,15 +1,18 @@
 # wine/app/database.py
+import asyncio
 import motor.motor_asyncio
 
 from app.settings import settings
 
 client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URL)
+# for async tests
+# client.get_io_loop = asyncio.get_running_loop
 db = client.catalog
 
 collection = db["wines"]
-aroma_list_collection = db["aroma_list"]
 users_collection = db["users"]
 comments_collection = db["comments"]
+aroma_list_collection = db["aroma_list"]
 
 
 # This is the code to restore the existing index if it breaks for some reason
