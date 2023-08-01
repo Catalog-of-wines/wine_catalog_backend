@@ -4,7 +4,7 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Query, HTTPException
 
 from app.database import aroma_list_collection, collection
-from app.dependencies import CommonsDep
+from app.dependencies import CommonsDepList, CommonsDepStr
 from app.models import Wine
 from app.product.utils import process_wine, get_query_for_aroma_search
 
@@ -12,7 +12,7 @@ router_products = APIRouter()
 
 
 @router_products.get("/catalog/", tags=["products"], response_model=list[Wine])
-async def get_catalog(commons: CommonsDep):
+async def get_catalog(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
@@ -26,7 +26,7 @@ async def get_catalog(commons: CommonsDep):
 
 
 @router_products.get("/with-package/", tags=["products"], response_model=list[Wine])
-async def get_catalog_with_package(commons: CommonsDep):
+async def get_catalog_with_package(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
@@ -42,13 +42,18 @@ async def get_catalog_with_package(commons: CommonsDep):
 
 # countries must be a list of strings in format "Італія (Italy), Іспанія (Spain)"
 @router_products.get("/by-country/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_country(commons: CommonsDep):
+async def get_catalog_by_country(commons: CommonsDepStr):
     query = commons["query"]
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
     if query:
-        query = {"country": {"$in": query}}
+        # Split the query into individual country names
+        country_names = [country.strip() for country in query.split(",")]
+        # Create a list of query conditions using the $or operator
+        query_conditions = [{"country": country_name} for country_name in country_names]
+        # Combine the query conditions with the $or operator
+        query = {"$or": query_conditions}
     else:
         query = {}
 
@@ -61,13 +66,16 @@ async def get_catalog_by_country(commons: CommonsDep):
 
 
 @router_products.get("/by-color/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_color(commons: CommonsDep):
+async def get_catalog_by_color(commons: CommonsDepStr):
     query = commons["query"]
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
     if query:
-        query = {"color": {"$in": query}}
+        # query = {"color": {"$in": query}}
+        color_names = [country.strip() for country in query.split(",")]
+        query_conditions = [{"color": color_name} for color_name in color_names]
+        query = {"$or": query_conditions}
     else:
         query = {}
 
@@ -80,7 +88,7 @@ async def get_catalog_by_color(commons: CommonsDep):
 
 
 @router_products.get("/by-wine-type/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_wine_type(commons: CommonsDep):
+async def get_catalog_by_wine_type(commons: CommonsDepList):
     query = commons["query"]
     limit = commons["limit"]
     skip = commons["skip"]
@@ -97,15 +105,17 @@ async def get_catalog_by_wine_type(commons: CommonsDep):
         wines.append(processed_wine)
     return wines
 
-
+# query can be: "0.187, 0.2, 0.375, 0.75, 1.5, 6"
 @router_products.get("/by-capacity/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_capacity(commons: CommonsDep):
+async def get_catalog_by_capacity(commons: CommonsDepStr):
     query = commons["query"]
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
     if query:
-        query = {"capacity": {"$in": query}}
+        capacities = [capacity.strip() for capacity in query.split(",")]
+        query_conditions = [{"capacity": capacity} for capacity in capacities]
+        query = {"$or": query_conditions}
     else:
         query = {}
 
@@ -134,7 +144,7 @@ async def get_bottle(wine_id: str):
 
 
 @router_products.get("/wine/", tags=["products"], response_model=list[Wine])
-async def get_wine(commons: CommonsDep):
+async def get_wine(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
@@ -147,7 +157,7 @@ async def get_wine(commons: CommonsDep):
 
 
 @router_products.get("/champagne/", tags=["products"], response_model=list[Wine])
-async def get_champagne(commons: CommonsDep):
+async def get_champagne(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     champagne = []
@@ -164,13 +174,11 @@ async def get_champagne(commons: CommonsDep):
 
 
 @router_products.get("/aroma/", tags=["products"], response_model=list[Wine])
-async def get_by_aroma(
-    query: str = Query(
-        ..., description="Query parameter - gastronomic_combination separated by coma"
-    ),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_by_aroma(commons: CommonsDepStr):
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
+
     wines = []
     search_query = await get_query_for_aroma_search(query)
 
@@ -198,13 +206,11 @@ async def get_aroma_mappings():
 
 
 @router_products.get("/food/", tags=["products"], response_model=list[Wine])
-async def get_by_food(
-    query: str = Query(
-        ..., description="Query parameter - gastronomic_combination separated by coma"
-    ),
-    limit: int = Query(9, gt=0, description="Number of records to return"),
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-):
+async def get_by_food(commons: CommonsDepStr):
+    query = commons["query"]
+    limit = commons["limit"]
+    skip = commons["skip"]
+
     foods = []
     query_words = [word.strip() for word in query.split(",")]
     filter_query = {"gastronomic_combination": {"$in": query_words}}
@@ -217,7 +223,7 @@ async def get_by_food(
 
 
 @router_products.get("/romantic/", tags=["products"], response_model=list[Wine])
-async def get_romantic(commons: CommonsDep):
+async def get_romantic(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     romantic_wines = []
@@ -235,7 +241,7 @@ async def get_romantic(commons: CommonsDep):
 
 
 @router_products.get("/festive/", tags=["products"], response_model=list[Wine])
-async def get_festive(commons: CommonsDep):
+async def get_festive(commons: CommonsDepList):
     limit = commons["limit"]
     skip = commons["skip"]
     festive_wines = []
