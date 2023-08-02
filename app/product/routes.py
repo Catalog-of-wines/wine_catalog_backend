@@ -88,13 +88,15 @@ async def get_catalog_by_color(commons: CommonsDepStr):
 
 
 @router_products.get("/by-wine-type/", tags=["products"], response_model=list[Wine])
-async def get_catalog_by_wine_type(commons: CommonsDepList):
+async def get_catalog_by_wine_type(commons: CommonsDepStr):
     query = commons["query"]
     limit = commons["limit"]
     skip = commons["skip"]
     wines = []
     if query:
-        query = {"wine_type": {"$in": query}}
+        wine_types = [wine_type.strip() for wine_type in query.split(",")]
+        query_conditions = [{"wine_type": wine_type} for wine_type in wine_types]
+        query = {"$or": query_conditions}
     else:
         query = {}
 
@@ -104,6 +106,7 @@ async def get_catalog_by_wine_type(commons: CommonsDepList):
         processed_wine = process_wine(wine)
         wines.append(processed_wine)
     return wines
+
 
 # query can be: "0.187, 0.2, 0.375, 0.75, 1.5, 6"
 @router_products.get("/by-capacity/", tags=["products"], response_model=list[Wine])
