@@ -22,6 +22,7 @@ origins = [
     "http://localhost:3000",
     "https://superb-malasada-e059fa.netlify.app",
     "https://dynamic-mermaid-e471dd.netlify.app",
+    "https://wine-catalog-et56.onrender.com"
 ]
 
 app.add_middleware(
