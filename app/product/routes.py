@@ -48,11 +48,8 @@ async def get_catalog_by_country(commons: CommonsDepStr):
     skip = commons["skip"]
     wines = []
     if query:
-        # Split the query into individual country names
         country_names = [country.strip() for country in query.split(",")]
-        # Create a list of query conditions using the $or operator
         query_conditions = [{"country": country_name} for country_name in country_names]
-        # Combine the query conditions with the $or operator
         query = {"$or": query_conditions}
     else:
         query = {}
