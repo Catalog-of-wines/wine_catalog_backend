@@ -7,6 +7,7 @@ from app.auth.validation_functions import (
     is_valid_email,
     is_valid_name,
     is_valid_password,
+    is_valid_phone,
 )
 from app.database import users_collection
 from app.models import User
@@ -24,6 +25,9 @@ async def register_user(user: User):
 
     if not is_valid_email(user.email):
         raise HTTPException(status_code=400, detail="Invalid email")
+
+    if user.telephone and not is_valid_phone(user.telephone):
+        raise HTTPException(status_code=400, detail="Invalid telephone")
 
     if not is_valid_password(user.password):
         raise HTTPException(

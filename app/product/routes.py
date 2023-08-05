@@ -1,7 +1,7 @@
 # wine/app/product/routes.py:
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from app.database import aroma_list_collection, collection
 from app.dependencies import CommonsDepList, CommonsDepStr
